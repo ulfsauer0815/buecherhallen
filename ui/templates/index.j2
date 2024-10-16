@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Bücherhallen Merkliste</title>
+</head>
+
+<body>
+
+<h1>Bücherhallen Merkliste</h1>
+
+<div id="availabilities">
+    {% for location, items in location_mapping | dictsort %}
+        <h2 id="{{ location | lower }}">{{ location }}</h2>
+        <ul>
+            {% for item in items %}
+                <li><a href="{{ item.url }}">{{ item.title }}</a>
+                    ({{ item.availabilities[location].count }}/{{ item.availabilities[location].max_count }})
+                </li>
+            {% endfor %}
+        </ul>
+    {% endfor %}
+</div>
+
+</body>
+</html>

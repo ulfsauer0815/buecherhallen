@@ -17,11 +17,17 @@ class Availability:
 
 class Availabilities:
     def __init__(self, availabilities: list[Availability]):
-        self.availabilities = availabilities
+        self.availabilities: dict[str, Availability] = {availability.location: availability for availability in
+                                                        availabilities}
 
     def is_available(self, location: str) -> bool:
-        return any(
-            [availability.is_available() for availability in self.availabilities if availability.location == location])
+        return self.availabilities[location].is_available()
+
+    def __getitem__(self, location: str) -> Availability:
+        return self.availabilities[location]
+
+    def items(self) -> list[tuple[str, Availability]]:
+        return self.availabilities.items()
 
     def __repr__(self):
         return f"Availabilities({self.availabilities})"
