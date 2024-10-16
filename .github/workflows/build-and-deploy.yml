@@ -1,0 +1,53 @@
+name: Build and deploy
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+jobs:
+
+  build-and-deploy:
+    name: "Build and run"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Setup Python & Install dependencies"
+        uses: getsentry/action-setup-venv@v2.1.0
+        with:
+          python-version: "3.x"
+          cache-dependency-path: |
+            requirements.txt
+          install-cmd: pip install -r requirements.txt
+
+      - name: "Run app"
+        env:
+          BH_USERNAME: ${{ secrets.BH_USERNAME }}
+          BH_PASSWORD: ${{ secrets.BH_PASSWORD }}
+        run: python main.py
+
+      - name: "Upload output as artifact"
+        id: deployment
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: output/
+
+
+  deploy:
+    name: "Deploy"
+    runs-on: ubuntu-latest
+    needs: build-and-deploy
+
+    permissions:
+      pages: write      # to deploy to Pages
+      id-token: write   # to verify the deployment originates from an appropriate source
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
