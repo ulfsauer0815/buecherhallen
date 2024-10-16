@@ -8,7 +8,7 @@
 <body>
 
 <h1>Bücherhallen Merkliste</h1>
-
+<p><small>Zuletzt aktualisiert: {{ current_time }}</small></p>
 <div id="availabilities">
     {% for location, items in location_mapping | dictsort %}
         <h2 id="{{ location | lower }}">{{ location }}</h2>
