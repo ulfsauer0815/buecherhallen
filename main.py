@@ -1,3 +1,5 @@
+import concurrent.futures
+
 from auth.credentials import retrieve_credentials
 from auth.login import login
 from media.item import retrieve_item_details, Item
@@ -13,8 +15,10 @@ def main():
     item_ids = retrieve_watchlist_items(cookies)
     print(item_ids)
 
-    items: list[Item] = list(map(retrieve_item_details, item_ids))
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        items: list[Item] = list(executor.map(retrieve_item_details, item_ids))
 
     generate_website(items)
+
 
 main()
