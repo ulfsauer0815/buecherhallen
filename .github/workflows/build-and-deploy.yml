@@ -27,6 +27,9 @@ jobs:
           BH_PASSWORD: ${{ secrets.BH_PASSWORD }}
         run: python main.py
 
+      - name: "Copy assets"
+        run: make all
+
       - name: "Upload output as artifact"
         id: deployment
         uses: actions/upload-pages-artifact@v3
