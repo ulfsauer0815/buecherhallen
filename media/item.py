@@ -3,16 +3,17 @@ from bs4 import BeautifulSoup
 
 
 class Availability:
-    def __init__(self, location: str, count: int, max_count: int):
+    def __init__(self, location: str, count: int, max_count: int, shelf: str):
         self.location = location
         self.count = count
         self.max_count = max_count
+        self.shelf = shelf
 
     def is_available(self) -> bool:
         return self.count > 0
 
     def __repr__(self):
-        return f"Availability({self.location}, {self.count}, {self.max_count})"
+        return f"Availability({self.location}, {self.count}, {self.max_count} at {self.shelf})"
 
 
 class Availabilities:
@@ -50,7 +51,8 @@ def parse_availability(availability: BeautifulSoup) -> Availability:
     location = availability.select(".medium-availability-item-title-location")[0].text
     count = availability.select(".medium-availability-item-title-count")[0].text
     count = count.split("/")
-    return Availability(location, int(count[0]), int(count[1]))
+    shelf = availability.select(".item-data-shelfmark")[0].text
+    return Availability(location, int(count[0]), int(count[1]), shelf)
 
 
 def retrieve_item_details(id: str) -> Item:

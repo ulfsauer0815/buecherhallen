@@ -18,13 +18,15 @@
 <div id="availabilities">
     {% for location, items in location_mapping | dictsort %}
         <h2 id="{{ location | lower }}">{{ location }}</h2>
-        <ul>
+        <table>
             {% for item in items %}
-                <li><a href="{{ item.url }}">{{ item.title }}</a>
-                    ({{ item.availabilities[location].count }}/{{ item.availabilities[location].max_count }})
-                </li>
+            <tr>
+                <td><a href="{{ item.url }}">{{ item.title }}</a></td>
+                <td>({{ item.availabilities[location].count }}/{{ item.availabilities[location].max_count }}) </td>
+                <td>{{ item.availabilities[location].shelf }}</td>
+            </tr>
             {% endfor %}
-        </ul>
+        </table>
     {% endfor %}
 </div>
 
