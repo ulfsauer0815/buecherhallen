@@ -31,9 +31,9 @@ def main():
             try:
                 return retrieve_item_details(item_id)
             except ItemParseError as e:
-                print(f"Failed to retrieve item {item_id}: {e}")
+                print(f"Failed to retrieve item {item_id}: {e}", file=sys.stderr)
                 if e.is_error():
-                    print("Exiting due to critical error in item retrieval")
+                    print("Exiting due to critical error in item retrieval", file=sys.stderr)
                     raise MainError(f"Critical error in retrieval of item {item_id}: {e}")
                 return None
 
@@ -41,7 +41,7 @@ def main():
             items = list(filter(None, executor.map(safe_retrieve, item_ids)))
         generate_website(items)
     except Exception as e:
-        print(f"Error: {e}\n")
+        print(f"Error: {e}\n", file=sys.stderr)
         print(traceback.format_exc(), end='', file=sys.stderr)
         exit(1)
 
