@@ -1,4 +1,5 @@
 import requests
+from requests.cookies import RequestsCookieJar
 from bs4 import BeautifulSoup
 
 from auth.credentials import Credentials
@@ -24,7 +25,7 @@ def get_request_token(soup: BeautifulSoup):
     return request_token_tag['value']
 
 
-def login(credentials: Credentials) -> requests.cookies.RequestsCookieJar:
+def login(credentials: Credentials) -> RequestsCookieJar:
     get_login_page = requests.get('https://www.buecherhallen.de/login.html')
     cookies = get_login_page.cookies
     soup = BeautifulSoup(get_login_page.text, "html.parser")

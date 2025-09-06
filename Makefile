@@ -1,5 +1,5 @@
 OUT = output
-ASSETS = ui/assets
+ASSETS = src/ui/assets
 
 
 .PHONY: all

@@ -25,7 +25,7 @@ jobs:
         env:
           BH_USERNAME: ${{ secrets.BH_USERNAME }}
           BH_PASSWORD: ${{ secrets.BH_PASSWORD }}
-        run: python main.py
+        run: python src/main.py
 
       - name: "Copy assets"
         run: make all
