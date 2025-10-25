@@ -5,7 +5,7 @@ description = "Generates an HTML page with available media grouped by location b
 requires-python = ">=3.12"
 dependencies = [
     "beautifulsoup4==4.12.3",
-    "jinja2==3.1.4",
+    "jinja2>=3.1.6",
     "requests==2.32.3",
 ]
 
