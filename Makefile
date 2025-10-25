@@ -1,5 +1,5 @@
 OUT = output
-ASSETS = src/ui/assets
+ASSETS = src/buecherhallen/ui/assets
 
 
 .PHONY: all
@@ -28,3 +28,7 @@ $(OUT)/apple-touch-icon.png: $(ASSETS)/favicon-512x512.png
 
 $(OUT)/favicon%: $(ASSETS)/favicon%
 	cp $< $@
+
+.PHONY: run
+run:
+	uv run src/buecherhallen/main.py

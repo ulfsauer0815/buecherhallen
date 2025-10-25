@@ -13,19 +13,20 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: "Setup Python & Install dependencies"
-        uses: getsentry/action-setup-venv@v2.2.0
-        with:
-          python-version: "3.x"
-          cache-dependency-path: |
-            requirements.txt
-          install-cmd: pip install -r requirements.txt
+      - name: "Setup Python"
+        uses: actions/setup-python@v6
+
+      - name: "Install uv"
+        uses: astral-sh/setup-uv@v6
+
+      - name: "Install dependencies"
+        run: uv sync --locked
 
       - name: "Run app"
         env:
           BH_USERNAME: ${{ secrets.BH_USERNAME }}
           BH_PASSWORD: ${{ secrets.BH_PASSWORD }}
-        run: python src/main.py
+        run: uv run src/buecherhallen/main.py
 
       - name: "Copy assets"
         run: make all
