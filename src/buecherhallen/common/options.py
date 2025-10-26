@@ -2,13 +2,15 @@ import os
 
 
 class Options:
-    def __init__(self, cache_cookies: bool):
+    def __init__(self, cache_cookies: bool, headless: bool) -> None:
         self.cache_cookies = cache_cookies  # experimental, just for testing right now
+        self.headless = headless
 
 
 def retrieve_options() -> Options:
-    cache_cookies = get_bool_option('BH_CACHE_COOKIES', 'false')
-    return Options(cache_cookies=cache_cookies)
+    cache_cookies = get_bool_option('BH_CACHE_COOKIES', False)
+    headless = get_bool_option('BH_HEADLESS', True)
+    return Options(cache_cookies=cache_cookies, headless=headless)
 
 
 def get_bool_option(env_name: str, default: bool) -> Options:

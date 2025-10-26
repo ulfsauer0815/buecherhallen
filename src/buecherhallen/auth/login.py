@@ -22,7 +22,7 @@ def check_login_success(cookies: RequestsCookieJar):
         raise LoginError("luci_session cookie not found, login has failed")
 
 
-def login(credentials: Credentials, use_cache: bool = False) -> RequestsCookieJar:
+def login(credentials: Credentials, use_cache: bool = False, headless: bool = True) -> RequestsCookieJar:
     if use_cache:
         logging.warn("Cache usage is experimental and does not clean up expired cookies!")
         logging.info("Checking for cached cookies")
@@ -37,7 +37,7 @@ def login(credentials: Credentials, use_cache: bool = False) -> RequestsCookieJa
     logging.info("Starting login process")
 
     try:
-        with Camoufox(os=["windows", "macos", "linux"], humanize=True, headless=False) as browser:
+        with Camoufox(os=["windows", "macos", "linux"], humanize=True, headless=headless) as browser:
             page = browser.new_page()
             __disable_cookie_banner(page)
 

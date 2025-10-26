@@ -21,7 +21,7 @@ def main():
         credentials = retrieve_credentials()
         options = retrieve_options()
         try:
-            cookies = login(credentials, options.cache_cookies)
+            cookies = login(credentials, options.cache_cookies, options.headless)
         except LoginError as e:
             raise MainError(f"Login failed: {e}")
 
