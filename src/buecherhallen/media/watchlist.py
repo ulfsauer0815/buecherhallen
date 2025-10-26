@@ -6,6 +6,8 @@ import requests
 from buecherhallen.media.list_item import ListItem
 from common.constants import BASE_URL, SOLUS_APP_ID
 
+log = logging.getLogger(__name__)
+
 
 class WatchlistError(Exception):
     pass
@@ -29,7 +31,7 @@ def __retrieve_watchlist_raw_items(cookies: requests.cookies.RequestsCookieJar) 
 
 
 def __retrieve_lists(cookies: requests.cookies.RequestsCookieJar) -> Any:
-    logging.info("Fetching lists")
+    log.info("Fetching lists")
 
     api_url = f'{BASE_URL}/api/items?type=lists'
     response = requests.get(
@@ -39,12 +41,12 @@ def __retrieve_lists(cookies: requests.cookies.RequestsCookieJar) -> Any:
     )
 
     status_code = response.status_code
-    logging.debug(f"Lists API response status code: {status_code}")
+    log.debug(f"Lists API response status code: {status_code}")
     response_json = response.json()
-    logging.debug(f"Lists API response JSON: {json.dumps(response_json, indent=2)}")
+    log.debug(f"Lists API response JSON: {json.dumps(response_json, indent=2)}")
 
     if status_code != 200:
-        logging.error(f"Failed to fetch lists: {status_code}")
+        log.error(f"Failed to fetch lists: {status_code}")
         return
 
     return response_json

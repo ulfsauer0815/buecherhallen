@@ -11,6 +11,8 @@ from playwright.sync_api import (
 )
 from requests.cookies import RequestsCookieJar
 
+log = logging.getLogger(__name__)
+
 
 class LoginError(Exception):
     pass
@@ -24,17 +26,17 @@ def check_login_success(cookies: RequestsCookieJar):
 
 def login(credentials: Credentials, use_cache: bool = False, headless: bool = True) -> RequestsCookieJar:
     if use_cache:
-        logging.warn("Cache usage is experimental and does not clean up expired cookies!")
-        logging.info("Checking for cached cookies")
+        log.warn("Cache usage is experimental and does not clean up expired cookies!")
+        log.info("Checking for cached cookies")
         cached_cookies = load_cookies()
         if cached_cookies:
             try:
                 check_login_success(cached_cookies)
                 return cached_cookies
             except LoginError:
-                logging.info("Cached cookies are invalid, proceeding to login")
+                log.info("Cached cookies are invalid, proceeding to login")
 
-    logging.info("Starting login process")
+    log.info("Starting login process")
 
     try:
         with Camoufox(os=["windows", "macos", "linux"], humanize=True, headless=headless) as browser:
@@ -52,21 +54,21 @@ def login(credentials: Credentials, use_cache: bool = False, headless: bool = Tr
             # wait for next page to load
             page.wait_for_url(re.compile(r'.*/user/account'), wait_until="commit")
 
-            logging.info("Login form submitted, checking cookies")
+            log.info("Login form submitted, checking cookies")
 
             cookie_jar = extract_cookie_jar(page)
 
-            logging.debug("Cookies after login (shortened):")
+            log.debug("Cookies after login (shortened):")
             for cookie in cookie_jar:
                 # print cookie but shorten values
-                logging.debug(f"{cookie.name}: {cookie.value[:10]}...")
+                log.debug(f"{cookie.name}: {cookie.value[:10]}...")
 
             check_login_success(cookie_jar)
             if use_cache:
                 cache_cookies(cookie_jar)
             return cookie_jar
     except Exception as e:
-        logging.error(f"Login failed: {str(e)}")
+        log.error(f"Login failed: {str(e)}")
         raise LoginError("Login process failed") from e
 
 

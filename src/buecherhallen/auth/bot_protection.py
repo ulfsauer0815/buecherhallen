@@ -7,6 +7,8 @@ from playwright.sync_api import (
     Page, Error as PlaywrightError
 )
 
+log = logging.getLogger(__name__)
+
 
 def solve_cloudflare(page: Page) -> None:
     try:
@@ -17,25 +19,25 @@ def solve_cloudflare(page: Page) -> None:
     bounding_box = None
 
     iframe = page.frame(url=re.compile(r'challenges.cloudflare.com/cdn-cgi/challenge-platform/.*'))
-    logging.info(f"Cloudflare iframe found: {iframe is not None}")
+    log.info(f"Cloudflare iframe found: {iframe is not None}")
 
     if iframe is not None:
-        logging.info("Wait for iframe")
+        log.info("Wait for iframe")
         iframe.wait_for_load_state(state="domcontentloaded")
         iframe.wait_for_load_state("networkidle")
         bounding_box = iframe.frame_element().bounding_box()
-        logging.debug(f"iframe bounding box: {bounding_box}")
+        log.debug(f"iframe bounding box: {bounding_box}")
 
     # Fallback: try to find the challenge box directly on the page
     if not bounding_box:
-        logging.info(f"Fallback, try to find directly on page")
+        log.info(f"Fallback, try to find directly on page")
         try:
             bounding_box = page.locator(
                 "#cf_turnstile div, #cf-turnstile div, .turnstile > div > div").last.bounding_box(timeout=5000)
-            logging.debug(f"Fallback bounding box: {bounding_box}")
+            log.debug(f"Fallback bounding box: {bounding_box}")
         except Exception as e:
-            logging.error(f"Failed to get fallback bounding box: {e}")
-            logging.info("Fallback to just wait for completion")
+            log.error(f"Failed to get fallback bounding box: {e}")
+            log.info("Fallback to just wait for completion")
             page.wait_for_timeout(3000)
             try:
                 page.wait_for_load_state("networkidle", timeout=10000)
@@ -43,31 +45,31 @@ def solve_cloudflare(page: Page) -> None:
                 pass
             page.wait_for_load_state(state="load")
             page.wait_for_load_state(state="domcontentloaded")
-            logging.info("Cloudflare challenge solved?")
+            log.info("Cloudflare challenge solved?")
             return
 
     # If bounding box is found, click the challenge box
     box_x = bounding_box["x"] + randint(26, 28)
     box_y = bounding_box["y"] + randint(25, 27)
-    logging.debug(f"Clicking box: (x={box_x}, y={box_y})")
+    log.debug(f"Clicking box: (x={box_x}, y={box_y})")
     page.mouse.click(box_x, box_y, button="left", delay=60)
 
-    logging.info("Wait for network idle after click")
+    log.info("Wait for network idle after click")
     try:
         page.wait_for_load_state("networkidle", timeout=10000)
     except PlaywrightError:
-        logging.info("Initial network idle timeout, continuing...")
+        log.info("Initial network idle timeout, continuing...")
 
-    logging.info("Wait for completion")
+    log.info("Wait for completion")
     page.wait_for_timeout(3000)
 
-    logging.info("Wait for another network idle")
+    log.info("Wait for another network idle")
     try:
         page.wait_for_load_state("networkidle", timeout=10000)
     except PlaywrightError:
-        logging.info("Network idle timeout, maybe challenge is solved?")
+        log.info("Network idle timeout, maybe challenge is solved?")
 
-    logging.info("Wait for page load")
+    log.info("Wait for page load")
     page.wait_for_load_state(state="load")
     page.wait_for_load_state(state="domcontentloaded")
 
@@ -75,8 +77,8 @@ def solve_cloudflare(page: Page) -> None:
     value = page.locator('input[name="cf-turnstile-response"]').get_attribute('value')
 
     if not value:
-        logging.error("Failed to retrieve Cloudflare turnstile response value")
+        log.error("Failed to retrieve Cloudflare turnstile response value")
         return
 
-    logging.debug(f"Turnstile value: {value[:10]}...")
-    logging.info("Cloudflare captcha is solved")
+    log.debug(f"Turnstile value: {value[:10]}...")
+    log.info("Cloudflare captcha is solved")

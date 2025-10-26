@@ -4,8 +4,10 @@ from enum import Enum
 from typing import Any
 
 import requests
-from media.list_item import ListItem
 from common.constants import BASE_URL, SOLUS_APP_ID
+from media.list_item import ListItem
+
+log = logging.getLogger(__name__)
 
 
 class Availability:
@@ -125,7 +127,7 @@ def retrieve_item_details(cookies: requests.cookies.RequestsCookieJar, list_item
 
 def __retrieve_raw_item_details(cookies: requests.cookies.RequestsCookieJar, list_item: ListItem) -> Item:
     id = list_item.id
-    logging.info(f"Fetching record with ID: {id}")
+    log.info(f"Fetching record with ID: {id}")
     api_url = f'{BASE_URL}/api/record?id={id}'
     response = requests.get(
         api_url,
@@ -134,12 +136,12 @@ def __retrieve_raw_item_details(cookies: requests.cookies.RequestsCookieJar, lis
     )
 
     status_code = response.status_code
-    logging.debug(f"Records API response status code: {status_code}")
+    log.debug(f"Records API response status code: {status_code}")
     response_json = response.json()
-    logging.debug(f"Records API response JSON: {json.dumps(response_json, indent=2)}")
+    log.debug(f"Records API response JSON: {json.dumps(response_json, indent=2)}")
 
     if status_code != 200:
-        logging.error(f"Failed to fetch record {id}: {status_code}")
+        log.error(f"Failed to fetch record {id}: {status_code}")
         raise ItemParseError(f"Failed to fetch record {id}: {status_code}", Severity.ERROR)
 
     return response_json
