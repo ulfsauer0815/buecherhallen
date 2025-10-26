@@ -2,6 +2,7 @@ import logging
 import re
 
 from auth.bot_protection import solve_cloudflare
+from auth.cache import cache_cookies, load_cookies
 from auth.credentials import Credentials
 from camoufox.sync_api import Camoufox
 from common.constants import LOGIN_URL, BASE_HOSTNAME
@@ -21,12 +22,20 @@ def check_login_success(cookies: RequestsCookieJar):
         raise LoginError("luci_session cookie not found, login has failed")
 
 
-def get_request_token():
-    pass
+def login(credentials: Credentials, use_cache: bool = False) -> RequestsCookieJar:
+    if use_cache:
+        logging.warn("Cache usage is experimental and does not clean up expired cookies!")
+        logging.info("Checking for cached cookies")
+        cached_cookies = load_cookies()
+        if cached_cookies:
+            try:
+                check_login_success(cached_cookies)
+                return cached_cookies
+            except LoginError:
+                logging.info("Cached cookies are invalid, proceeding to login")
 
-
-def login(credentials: Credentials) -> RequestsCookieJar:
     logging.info("Starting login process")
+
     try:
         with Camoufox(os=["windows", "macos", "linux"], humanize=True, headless=False) as browser:
             page = browser.new_page()
@@ -45,15 +54,17 @@ def login(credentials: Credentials) -> RequestsCookieJar:
 
             logging.info("Login form submitted, checking cookies")
 
-            cookies_jar = extract_cookie_jar(page)
+            cookie_jar = extract_cookie_jar(page)
 
             logging.debug("Cookies after login (shortened):")
-            for cookie in cookies_jar:
+            for cookie in cookie_jar:
                 # print cookie but shorten values
                 logging.debug(f"{cookie.name}: {cookie.value[:10]}...")
 
-            check_login_success(cookies_jar)
-            return cookies_jar
+            check_login_success(cookie_jar)
+            if use_cache:
+                cache_cookies(cookie_jar)
+            return cookie_jar
     except Exception as e:
         logging.error(f"Login failed: {str(e)}")
         raise LoginError("Login process failed") from e

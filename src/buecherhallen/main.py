@@ -5,6 +5,7 @@ import traceback
 
 from auth.credentials import retrieve_credentials
 from auth.login import login, LoginError
+from common.options import retrieve_options
 from media.item import retrieve_item_details, Item, ItemParseError
 from media.watchlist import retrieve_watchlist_items, WatchlistError
 from ui.site import generate_website
@@ -17,8 +18,9 @@ class MainError(Exception):
 def main():
     try:
         credentials = retrieve_credentials()
+        options = retrieve_options()
         try:
-            cookies = login(credentials)
+            cookies = login(credentials, options.cache_cookies)
         except LoginError as e:
             raise MainError(f"Login failed: {e}")
 
@@ -31,6 +33,7 @@ def main():
         exit(0)  # Temporary exit to skip further processing
 
         items: list[Item] = []
+
         def safe_retrieve(item_id):
             try:
                 return retrieve_item_details(item_id)
