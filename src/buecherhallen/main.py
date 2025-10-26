@@ -7,6 +7,7 @@ from auth.credentials import retrieve_credentials
 from auth.login import login, LoginError
 from common.options import retrieve_options
 from media.item import retrieve_item_details, Item, ItemParseError
+from media.list_item import ListItem
 from media.watchlist import retrieve_watchlist_items, WatchlistError
 from ui.site import generate_website
 
@@ -25,29 +26,28 @@ def main():
             raise MainError(f"Login failed: {e}")
 
         try:
-            items = retrieve_watchlist_items(cookies)
+            list_items = retrieve_watchlist_items(cookies)
         except WatchlistError as e:
             raise MainError(f"Failed to retrieve watchlist: {e}")
 
-        for item in items:
+        for item in list_items:
             print(item)
-
-        exit(0)  # Temporary exit to skip further processing
 
         items: list[Item] = []
 
-        def safe_retrieve(item_id):
+        def safe_retrieve(list_item: ListItem) -> Item | None:
             try:
-                return retrieve_item_details(item_id)
+                return retrieve_item_details(cookies, list_item)
             except ItemParseError as e:
-                print(f"Failed to retrieve item {item_id}: {e}", file=sys.stderr)
+                print(f"Failed to retrieve item {list_item}: {e}", file=sys.stderr)
                 if e.is_error():
                     print("Exiting due to critical error in item retrieval", file=sys.stderr)
-                    raise MainError(f"Critical error in retrieval of item {item_id}: {e}")
+                    raise MainError(f"Critical error in retrieval of item {list_item}: {e}")
                 return None
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-            items = list(filter(None, executor.map(safe_retrieve, items)))
+            items = list(filter(None, executor.map(safe_retrieve, list_items)))
+
         generate_website(items)
     except Exception as e:
         print(f"Error: {e}\n", file=sys.stderr)
@@ -55,7 +55,7 @@ def main():
         exit(1)
 
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARNING)
 
 if __name__ == "__main__":
     main()
