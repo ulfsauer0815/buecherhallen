@@ -4,14 +4,11 @@ import re
 from auth.bot_protection import solve_cloudflare
 from auth.credentials import Credentials
 from camoufox.sync_api import Camoufox
+from common.constants import LOGIN_URL, BASE_HOSTNAME
 from playwright.sync_api import (
     Page
 )
 from requests.cookies import RequestsCookieJar
-
-BASE_HOSTNAME = 'www2.buecherhallen.de'
-BASE_URL = f'https://{BASE_HOSTNAME}'
-LOGIN_URL = f'{BASE_URL}/user/login'
 
 
 class LoginError(Exception):

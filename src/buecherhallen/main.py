@@ -6,7 +6,7 @@ import traceback
 from auth.credentials import retrieve_credentials
 from auth.login import login, LoginError
 from media.item import retrieve_item_details, Item, ItemParseError
-from media.watchlist import retrieve_watchlist_items, WatchlistParseError
+from media.watchlist import retrieve_watchlist_items, WatchlistError
 from ui.site import generate_website
 
 
@@ -21,14 +21,16 @@ def main():
             cookies = login(credentials)
         except LoginError as e:
             raise MainError(f"Login failed: {e}")
-        exit(0) # Temporary exit to skip further processing
+
         try:
             item_ids = retrieve_watchlist_items(cookies)
-        except WatchlistParseError as e:
+        except WatchlistError as e:
             raise MainError(f"Failed to retrieve watchlist: {e}")
         print(item_ids)
-        items: list[Item] = []
 
+        exit(0)  # Temporary exit to skip further processing
+
+        items: list[Item] = []
         def safe_retrieve(item_id):
             try:
                 return retrieve_item_details(item_id)
@@ -49,7 +51,6 @@ def main():
 
 
 logging.basicConfig(level=logging.DEBUG)
-
 
 if __name__ == "__main__":
     main()
