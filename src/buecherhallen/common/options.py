@@ -8,12 +8,12 @@ class Options:
 
 
 def retrieve_options() -> Options:
-    cache_cookies = get_bool_option('BH_CACHE_COOKIES', False)
-    headless = get_bool_option('BH_HEADLESS', True)
+    cache_cookies = __get_bool_option('BH_CACHE_COOKIES', False)
+    headless = __get_bool_option('BH_HEADLESS', True)
     return Options(cache_cookies=cache_cookies, headless=headless)
 
 
-def get_bool_option(env_name: str, default: bool) -> Options:
+def __get_bool_option(env_name: str, default: bool) -> Options:
     value = os.getenv(env_name)
     if value is None:
         return default
