@@ -26,6 +26,7 @@ jobs:
         env:
           BH_USERNAME: ${{ secrets.BH_USERNAME }}
           BH_PASSWORD: ${{ secrets.BH_PASSWORD }}
+          BH_LOG_LEVEL: INFO
         run: uv run src/buecherhallen/main.py
 
       - name: "Copy assets"
