@@ -3,6 +3,7 @@ import logging
 from typing import Any
 
 import requests
+from buecherhallen.media.list_item import ListItem
 from common.constants import BASE_URL, SOLUS_APP_ID
 
 
@@ -10,26 +11,24 @@ class WatchlistError(Exception):
     pass
 
 
-def get_watchlist_item_id(item):
-    if not item.has_attr('id'):
-        raise WatchlistError("Watchlist item missing 'id' attribute.")
-    return item['id']
-
-
 def retrieve_watchlist_items(cookies: requests.cookies.RequestsCookieJar) -> Any:
     try:
-        lists = retrieve_lists(cookies)
-
-        for list in lists:
-            if list.get("listName") == "Merkliste":
-                watch_list_items = list.get("items", [])
-                return watch_list_items
-
+        raw_items = __retrieve_watchlist_raw_items(cookies)
+        return [ListItem.from_json(raw_item) for raw_item in raw_items]
     except Exception as e:
         raise WatchlistError(f"Error retrieving watchlist items: {e}")
 
 
-def retrieve_lists(cookies: requests.cookies.RequestsCookieJar) -> Any:
+def __retrieve_watchlist_raw_items(cookies: requests.cookies.RequestsCookieJar) -> Any:
+    lists = __retrieve_lists(cookies)
+
+    for list in lists:
+        if list.get("listName") == "Merkliste":
+            watch_list_items = list.get("items", [])
+            return watch_list_items
+
+
+def __retrieve_lists(cookies: requests.cookies.RequestsCookieJar) -> Any:
     logging.info("Fetching lists")
 
     api_url = f'{BASE_URL}/api/items?type=lists'

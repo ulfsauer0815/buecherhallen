@@ -25,10 +25,12 @@ def main():
             raise MainError(f"Login failed: {e}")
 
         try:
-            item_ids = retrieve_watchlist_items(cookies)
+            items = retrieve_watchlist_items(cookies)
         except WatchlistError as e:
             raise MainError(f"Failed to retrieve watchlist: {e}")
-        print(item_ids)
+
+        for item in items:
+            print(item)
 
         exit(0)  # Temporary exit to skip further processing
 
@@ -45,7 +47,7 @@ def main():
                 return None
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-            items = list(filter(None, executor.map(safe_retrieve, item_ids)))
+            items = list(filter(None, executor.map(safe_retrieve, items)))
         generate_website(items)
     except Exception as e:
         print(f"Error: {e}\n", file=sys.stderr)
