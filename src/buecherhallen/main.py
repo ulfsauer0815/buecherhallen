@@ -1,4 +1,5 @@
 import concurrent.futures
+import logging
 import sys
 import traceback
 
@@ -20,6 +21,7 @@ def main():
             cookies = login(credentials)
         except LoginError as e:
             raise MainError(f"Login failed: {e}")
+        exit(0) # Temporary exit to skip further processing
         try:
             item_ids = retrieve_watchlist_items(cookies)
         except WatchlistParseError as e:
@@ -44,6 +46,9 @@ def main():
         print(f"Error: {e}\n", file=sys.stderr)
         print(traceback.format_exc(), end='', file=sys.stderr)
         exit(1)
+
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 if __name__ == "__main__":
