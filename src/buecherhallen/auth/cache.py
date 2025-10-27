@@ -1,7 +1,6 @@
 import json
 import logging
 
-import requests
 from common.constants import COOKIES_FILE
 from requests.cookies import RequestsCookieJar
 
@@ -10,25 +9,50 @@ log = logging.getLogger(__name__)
 
 def cache_cookies(cookies: RequestsCookieJar):
     log.info("Caching cookie jar")
-    cookies_dict = requests.utils.dict_from_cookiejar(cookies)
+
+    cookies_list = []
+    for cookie in cookies:
+        cookies_list.append({
+            "name": cookie.name,
+            "value": cookie.value,
+            "domain": cookie.domain,
+            "path": cookie.path,
+            "expires": cookie.expires,
+            "secure": cookie.secure,
+            "httponly": cookie.has_nonstandard_attr("HttpOnly"),
+            "rest": cookie._rest,
+        })
+
     with open(COOKIES_FILE, "w", encoding="utf-8") as f:
-        json.dump(cookies_dict, f, indent=2)
+        json.dump(cookies_list, f, indent=2)
 
 
 def load_cookies() -> RequestsCookieJar | None:
     log.info("Searching cookies jar in cache")
     try:
         with open(COOKIES_FILE, "r", encoding="utf-8") as f:
-            cookies_dict = json.load(f)
-        cookies_jar = requests.utils.cookiejar_from_dict(cookies_dict)
+            cookies_list = json.load(f)
+        cookies_jar = RequestsCookieJar()
+        for cookie in cookies_list:
+            cookies_jar.set(
+                cookie["name"],
+                cookie["value"],
+                domain=cookie.get("domain"),
+                path=cookie.get("path"),
+                expires=cookie.get("expires"),
+                secure=cookie.get("secure", False),
+                rest=cookie.get("rest", {}),
+            )
+            if cookie.get("httponly"):
+                cookies_jar._cookies[cookie["domain"]][cookie["path"]][cookie["name"]].set_nonstandard_attr("HttpOnly",
+                                                                                                            True)
         return cookies_jar
     except FileNotFoundError:
         log.info("No cookies jar found in cache")
         return None
 
 
-def load_cached_cookies():
-    cached_cookies = load_cookies()
-    if cached_cookies:
-        log.info("Found cookie jar in cache")
-    return cached_cookies
+def log_cookies(cookies: RequestsCookieJar):
+    for cookie in cookies:
+        log.debug(
+            f"Cookie: {cookie.name}={cookie.value[:10]}...; Domain={cookie.domain}; Path={cookie.path}; Expires={cookie.expires}; Secure={cookie.secure}; HttpOnly={cookie.has_nonstandard_attr('HttpOnly')}; Rest={cookie._rest}")

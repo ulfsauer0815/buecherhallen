@@ -1,8 +1,9 @@
 import logging
 import re
+import time
 
 from auth.bot_protection import solve_cloudflare
-from auth.cache import cache_cookies, load_cookies
+from auth.cache import cache_cookies, load_cookies, log_cookies
 from auth.credentials import Credentials
 from camoufox.sync_api import Camoufox
 from common.constants import LOGIN_URL, BASE_HOSTNAME
@@ -12,6 +13,8 @@ from playwright.sync_api import (
 from requests.cookies import RequestsCookieJar
 
 log = logging.getLogger(__name__)
+
+EXPIRY_BUFFER_SECONDS = 5 * 60  # 5 minutes
 
 
 class LoginError(Exception):
@@ -23,10 +26,23 @@ def check_login_success(cookies: RequestsCookieJar):
         log.error("luci_session cookie not found after login")
         raise LoginError("luci_session cookie not found, login has failed")
 
+    luci_session_cookie = get_cookie(cookies, 'luci_session')
+    expiry = luci_session_cookie.expires
+    if expiry is None:
+        log.warn("Cached luci_session cookie has no expiry, might be invalid")
+        return
+
+    current_time = time.time()
+    log.debug(f"luci_session cookie expiry: {expiry}, in {expiry - current_time} seconds")
+    is_expired = expiry is not None and (expiry - EXPIRY_BUFFER_SECONDS) < current_time
+    if is_expired:
+        log.info("luci_session cookie is expired")
+        raise LoginError("luci_session cookie is expired, login has failed")
+
 
 def login(credentials: Credentials, use_cache: bool = False, headless: bool = True) -> RequestsCookieJar:
     if use_cache:
-        log.warn("Cache usage is experimental and does not clean up expired cookies!")
+        log.warn("Cache usage is experimental and might not work as expected!")
         log.info("Checking for cached cookies")
         cached_cookies = load_cookies()
         if cached_cookies:
@@ -100,5 +116,20 @@ def extract_cookie_jar(page) -> RequestsCookieJar:
     cookies = page.context.cookies()
     cookie_jar = RequestsCookieJar()
     for cookie in cookies:
-        cookie_jar.set(cookie['name'], cookie['value'], domain=cookie['domain'], path=cookie['path'])
+        cookie_jar.set(
+            name=cookie['name'],
+            value=cookie['value'],
+            domain=cookie.get('domain', ''),
+            path=cookie.get('path', '/'),
+            expires=cookie.get('expires'),
+            secure=cookie.get('secure', False),
+            rest={'HttpOnly': cookie.get('httpOnly', False)}
+        )
     return cookie_jar
+
+
+def get_cookie(cookies: RequestsCookieJar, name: str):
+    for cookie in cookies:
+        if cookie.name == name:
+            return cookie
+    return None
