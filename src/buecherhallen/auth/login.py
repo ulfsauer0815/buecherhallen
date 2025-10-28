@@ -29,7 +29,7 @@ def check_login_success(cookies: RequestsCookieJar):
     luci_session_cookie = get_cookie(cookies, 'luci_session')
     expiry = luci_session_cookie.expires
     if expiry is None:
-        log.warn("Cached luci_session cookie has no expiry, might be invalid")
+        log.warning("Cached luci_session cookie has no expiry, might be invalid")
         return
 
     current_time = time.time()
@@ -42,7 +42,7 @@ def check_login_success(cookies: RequestsCookieJar):
 
 def login(credentials: Credentials, use_cache: bool = False, headless: bool = True) -> RequestsCookieJar:
     if use_cache:
-        log.warn("Cache usage is experimental and might not work as expected!")
+        log.warning("Cache usage is experimental and might not work as expected!")
         log.info("Checking for cached cookies")
         cached_cookies = load_cookies()
         if cached_cookies:
