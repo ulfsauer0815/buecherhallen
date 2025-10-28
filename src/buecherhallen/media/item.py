@@ -3,7 +3,7 @@ import logging
 from enum import Enum
 from typing import Any
 
-import requests.cookies
+import requests
 from common.constants import BASE_URL, SOLUS_APP_ID
 from media.list_item import ListItem
 
@@ -118,20 +118,19 @@ class ItemParseError(Exception):
         return self.severity == Severity.WARN
 
 
-def retrieve_item_details(cookies: requests.cookies.RequestsCookieJar, list_item: ListItem) -> Item:
-    raw_item = __retrieve_raw_item_details(cookies, list_item)
+def retrieve_item_details(list_item: ListItem) -> Item:
+    raw_item = __retrieve_raw_item_details(list_item)
     item = Item.from_json(raw_item)
     print(item)
     return item
 
 
-def __retrieve_raw_item_details(cookies: requests.cookies.RequestsCookieJar, list_item: ListItem) -> Item:
+def __retrieve_raw_item_details(list_item: ListItem) -> Item:
     item_id = list_item.item_id
     log.info(f"Fetching record with ID: {item_id}")
     api_url = f'{BASE_URL}/api/record?id={item_id}'
     response = requests.get(
         api_url,
-        cookies=cookies,
         headers={'Solus-App-Id': SOLUS_APP_ID}
     )
 
