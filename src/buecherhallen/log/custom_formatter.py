@@ -1,4 +1,5 @@
 import logging
+import os
 
 
 class CustomFormatter(logging.Formatter):
@@ -9,6 +10,15 @@ class CustomFormatter(logging.Formatter):
     bold_red = "\x1b[31;1m"
     reset = "\x1b[0m"
 
+    @staticmethod
+    def colors_enabled():
+        no_color_env = os.environ.get('NO_COLOR')
+        if no_color_env is not None and no_color_env.lower() in ('', '1', 'true', 'yes'):
+            return False
+        return True
+
+    colored_output = colors_enabled()
+
     COLORS = {
         logging.DEBUG: magenta,
         logging.INFO: blue,
@@ -18,7 +28,10 @@ class CustomFormatter(logging.Formatter):
     }
 
     def __get_format(self, level):
-        return f"[%(asctime)s] [{self.COLORS.get(level)}%(levelname)s{self.reset}] %(message)s"
+        if self.colored_output:
+            return f"[%(asctime)s] [{self.COLORS.get(level)}%(levelname)s{self.reset}] %(message)s"
+        else:
+            return f"[%(asctime)s] [%(levelname)s] %(message)s"
 
     def format(self, record):
         log_fmt = self.__get_format(record.levelno)
