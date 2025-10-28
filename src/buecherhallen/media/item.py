@@ -3,7 +3,7 @@ import logging
 from enum import Enum
 from typing import Any
 
-import requests
+import requests.cookies
 from common.constants import BASE_URL, SOLUS_APP_ID
 from media.list_item import ListItem
 
@@ -43,8 +43,8 @@ class Availabilities:
 
 
 class Item:
-    def __init__(self, id, title, author, signature, availabilities):
-        self.id = id
+    def __init__(self, item_id, title, author, signature, availabilities):
+        self.item_id = item_id
         self.title = title
         self.author = author
         self.signature = signature
@@ -59,14 +59,14 @@ class Item:
         return self.signature
 
     def get_url(self) -> str:
-        return f"{BASE_URL}/manifestations/{self.id}"
+        return f"{BASE_URL}/manifestations/{self.item_id}"
 
     def __repr__(self):
-        return f"Item({self.id}, {self.title}, {self.author}, {self.signature}, {self.availabilities})"
+        return f"Item({self.item_id}, {self.title}, {self.author}, {self.signature}, {self.availabilities})"
 
     @staticmethod
     def from_json(raw: Any) -> 'Item':
-        id = raw.get("recordID")
+        item_id = raw.get("recordID")
         title = raw.get("title")
         author = raw.get("author")
 
@@ -94,7 +94,7 @@ class Item:
 
         availabilities = Availabilities(availabilities_list)
 
-        return Item(id, title, author, signature, availabilities)
+        return Item(item_id, title, author, signature, availabilities)
 
 
 class Severity(Enum):
@@ -126,9 +126,9 @@ def retrieve_item_details(cookies: requests.cookies.RequestsCookieJar, list_item
 
 
 def __retrieve_raw_item_details(cookies: requests.cookies.RequestsCookieJar, list_item: ListItem) -> Item:
-    id = list_item.id
-    log.info(f"Fetching record with ID: {id}")
-    api_url = f'{BASE_URL}/api/record?id={id}'
+    item_id = list_item.item_id
+    log.info(f"Fetching record with ID: {item_id}")
+    api_url = f'{BASE_URL}/api/record?id={item_id}'
     response = requests.get(
         api_url,
         cookies=cookies,
@@ -141,7 +141,7 @@ def __retrieve_raw_item_details(cookies: requests.cookies.RequestsCookieJar, lis
     log.debug(f"Records API response JSON: {json.dumps(response_json, indent=2)}")
 
     if status_code != 200:
-        log.error(f"Failed to fetch record {id}: {status_code}")
-        raise ItemParseError(f"Failed to fetch record {id}: {status_code}", Severity.ERROR)
+        log.error(f"Failed to fetch record {item_id}: {status_code}")
+        raise ItemParseError(f"Failed to fetch record {item_id}: {status_code}", Severity.ERROR)
 
     return response_json

@@ -40,11 +40,11 @@ def run():
         def safe_retrieve(list_item: ListItem) -> Item | None:
             try:
                 return retrieve_item_details(cookies, list_item)
-            except ItemParseError as e:
-                print(f"Failed to retrieve item {list_item}: {e}", file=sys.stderr)
-                if e.is_error():
+            except ItemParseError as ipe:
+                print(f"Failed to retrieve item {list_item}: {ipe}", file=sys.stderr)
+                if ipe.is_error():
                     print("Exiting due to critical error in item retrieval", file=sys.stderr)
-                    raise AppError(f"Critical error in retrieval of item {list_item}: {e}")
+                    raise AppError(f"Critical error in retrieval of item {list_item}: {ipe}")
                 return None
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:

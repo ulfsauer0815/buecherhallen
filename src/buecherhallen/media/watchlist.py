@@ -3,8 +3,10 @@ import logging
 from typing import Any
 
 import requests
-from buecherhallen.media.list_item import ListItem
+import requests.cookies
 from common.constants import BASE_URL, SOLUS_APP_ID
+
+from buecherhallen.media.list_item import ListItem
 
 log = logging.getLogger(__name__)
 
@@ -24,10 +26,12 @@ def retrieve_watchlist_items(cookies: requests.cookies.RequestsCookieJar) -> Any
 def __retrieve_watchlist_raw_items(cookies: requests.cookies.RequestsCookieJar) -> Any:
     lists = __retrieve_lists(cookies)
 
-    for list in lists:
-        if list.get("listName") == "Merkliste":
-            watch_list_items = list.get("items", [])
+    for item_list in lists:
+        if item_list.get("listName") == "Merkliste":
+            watch_list_items = item_list.get("items", [])
             return watch_list_items
+
+    raise WatchlistError(f"Cannot find list with name 'Merkliste'")
 
 
 def __retrieve_lists(cookies: requests.cookies.RequestsCookieJar) -> Any:
@@ -47,6 +51,6 @@ def __retrieve_lists(cookies: requests.cookies.RequestsCookieJar) -> Any:
 
     if status_code != 200:
         log.error(f"Failed to fetch lists: {status_code}")
-        return
+        raise WatchlistError(f"Failed to fetch lists: {status_code}")
 
     return response_json

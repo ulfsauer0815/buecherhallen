@@ -11,13 +11,13 @@ class CustomFormatter(logging.Formatter):
     reset = "\x1b[0m"
 
     @staticmethod
-    def colors_enabled():
+    def __colors_enabled():
         no_color_env = os.environ.get('NO_COLOR')
         if no_color_env is not None and no_color_env.lower() in ('', '1', 'true', 'yes'):
             return False
         return True
 
-    colored_output = colors_enabled()
+    colored_output = __colors_enabled()
 
     COLORS = {
         logging.DEBUG: magenta,

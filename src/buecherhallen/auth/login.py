@@ -3,7 +3,7 @@ import re
 import time
 
 from auth.bot_protection import solve_cloudflare
-from auth.cache import cache_cookies, load_cookies, log_cookies
+from auth.cache import cache_cookies, load_cookies
 from auth.credentials import Credentials
 from camoufox.sync_api import Camoufox
 from common.constants import LOGIN_URL, BASE_HOSTNAME
@@ -21,12 +21,12 @@ class LoginError(Exception):
     pass
 
 
-def check_login_success(cookies: RequestsCookieJar):
+def __check_login_success(cookies: RequestsCookieJar):
     if 'luci_session' not in cookies:
         log.error("luci_session cookie not found after login")
         raise LoginError("luci_session cookie not found, login has failed")
 
-    luci_session_cookie = get_cookie(cookies, 'luci_session')
+    luci_session_cookie = __get_cookie(cookies, 'luci_session')
     expiry = luci_session_cookie.expires
     if expiry is None:
         log.warning("Cached luci_session cookie has no expiry, might be invalid")
@@ -47,7 +47,7 @@ def login(credentials: Credentials, use_cache: bool = False, headless: bool = Tr
         cached_cookies = load_cookies()
         if cached_cookies:
             try:
-                check_login_success(cached_cookies)
+                __check_login_success(cached_cookies)
                 return cached_cookies
             except LoginError:
                 log.info("Cached cookies are invalid, proceeding to login")
@@ -79,7 +79,7 @@ def login(credentials: Credentials, use_cache: bool = False, headless: bool = Tr
                 # print cookie but shorten values
                 log.debug(f"{cookie.name}: {cookie.value[:10]}...")
 
-            check_login_success(cookie_jar)
+            __check_login_success(cookie_jar)
             if use_cache:
                 cache_cookies(cookie_jar)
             return cookie_jar
@@ -128,7 +128,7 @@ def extract_cookie_jar(page) -> RequestsCookieJar:
     return cookie_jar
 
 
-def get_cookie(cookies: RequestsCookieJar, name: str):
+def __get_cookie(cookies: RequestsCookieJar, name: str):
     for cookie in cookies:
         if cookie.name == name:
             return cookie

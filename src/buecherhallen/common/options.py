@@ -13,7 +13,7 @@ def retrieve_options() -> Options:
     return Options(cache_cookies=cache_cookies, headless=headless)
 
 
-def __get_bool_option(env_name: str, default: bool) -> Options:
+def __get_bool_option(env_name: str, default: bool) -> bool:
     value = os.getenv(env_name)
     if value is None:
         return default
