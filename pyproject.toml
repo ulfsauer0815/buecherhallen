@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Generates an HTML page with available media grouped by location based on your personal watch list from for the Hamburg public libraries."
 requires-python = ">=3.12"
 dependencies = [
-    "beautifulsoup4==4.12.3",
+    "camoufox[geoip]>=0.4.11",
     "jinja2>=3.1.6",
     "requests>=2.32.5",
 ]

@@ -1,0 +1,5 @@
+BASE_HOSTNAME = 'www2.buecherhallen.de'
+BASE_URL = f'https://{BASE_HOSTNAME}'
+LOGIN_URL = f'{BASE_URL}/user/login'
+SOLUS_APP_ID = '28d4dc2f-692b-472b-870d-5e6c35c4ad26'
+COOKIES_FILE = 'cookies.json'

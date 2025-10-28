@@ -1,7 +1,13 @@
+import json
+import logging
 from enum import Enum
+from typing import Any
 
 import requests
-from bs4 import BeautifulSoup
+from common.constants import BASE_URL, SOLUS_APP_ID
+from media.list_item import ListItem
+
+log = logging.getLogger(__name__)
 
 
 class Availability:
@@ -15,13 +21,13 @@ class Availability:
         return self.count > 0
 
     def __repr__(self):
-        return f"Availability({self.location}, {self.count}, {self.max_count} at {self.shelf})"
+        return f"Availability({self.location}, {self.count}, {self.max_count}, {self.shelf})"
 
 
 class Availabilities:
     def __init__(self, availabilities: list[Availability]):
-        self.availabilities: dict[str, Availability] = {availability.location: availability for availability in
-                                                        availabilities}
+        self.availabilities: dict[str, Availability] = \
+            {availability.location: availability for availability in availabilities}
 
     def is_available(self, location: str) -> bool:
         return self.availabilities[location].is_available()
@@ -37,16 +43,58 @@ class Availabilities:
 
 
 class Item:
-    def __init__(self, url, title, availabilities):
-        self.url = url
+    def __init__(self, item_id, title, author, signature, availabilities):
+        self.item_id = item_id
         self.title = title
+        self.author = author
+        self.signature = signature
         self.availabilities = availabilities
 
     def is_available(self, location: str) -> bool:
         return self.availabilities.is_available(location)
 
+    def get_clean_signature(self) -> str:
+        if self.signature.startswith("1 @ "):
+            return self.signature[4:]
+        return self.signature
+
+    def get_url(self) -> str:
+        return f"{BASE_URL}/manifestations/{self.item_id}"
+
     def __repr__(self):
-        return f"Item({self.title}, {self.availabilities}, {self.url})"
+        return f"Item({self.item_id}, {self.title}, {self.author}, {self.signature}, {self.availabilities})"
+
+    @staticmethod
+    def from_json(raw: Any) -> 'Item':
+        item_id = raw.get("recordID")
+        title = raw.get("title")
+        author = raw.get("author")
+
+        signature = ""
+        for metadata in raw.get("mainMetadata", []):
+            if metadata.get("key") == "Signatur":
+                signature = metadata.get("usableValue", "")
+                break
+
+        copies = raw.get("copies", [])
+        availabilities_list = []
+        location_counts = {}
+        for copy in copies:
+            location_name = copy.get("location", {}).get("locationName", "Unknown Location")
+            available = copy.get("available", False)
+            if location_name not in location_counts:
+                # 'shelf' seems to be always empty, maybe it will be used in the future
+                location_counts[location_name] = {"count": 0, "max_count": 0, "shelf": copy.get("shelf", "")}
+            location_counts[location_name]["max_count"] += 1
+            if available:
+                location_counts[location_name]["count"] += 1
+
+        for location, counts in location_counts.items():
+            availabilities_list.append(Availability(location, counts["count"], counts["max_count"], counts["shelf"]))
+
+        availabilities = Availabilities(availabilities_list)
+
+        return Item(item_id, title, author, signature, availabilities)
 
 
 class Severity(Enum):
@@ -70,75 +118,29 @@ class ItemParseError(Exception):
         return self.severity == Severity.WARN
 
 
-def get_availability_fields(availability: BeautifulSoup):
-    location_tag = availability.select_one(".medium-availability-item-title-location")
-    count_tag = availability.select_one(".medium-availability-item-title-count")
-    shelf_tag = availability.select_one(".item-data-shelfmark")
-    if not location_tag or not count_tag or not shelf_tag:
-        raise ItemParseError("Missing availability fields", Severity.ERROR)
-    location = location_tag.text
-    count = count_tag.text
-    count_split = count.split("/")
-    if len(count_split) != 2:
-        raise ItemParseError(f"Count field malformed: {count_tag.text}", Severity.ERROR)
-    try:
-        count_int = int(count_split[0])
-        max_count_int = int(count_split[1])
-    except ValueError:
-        raise ItemParseError(f"Count values are not integers: {count_split}", Severity.ERROR)
-    shelf = shelf_tag.text
-    return location, count_int, max_count_int, shelf
+def retrieve_item_details(list_item: ListItem) -> Item:
+    raw_item = __retrieve_raw_item_details(list_item)
+    item = Item.from_json(raw_item)
+    print(item)
+    return item
 
 
-def parse_availability(availability: BeautifulSoup) -> Availability:
-    try:
-        location, count_int, max_count_int, shelf = get_availability_fields(availability)
-        return Availability(location, count_int, max_count_int, shelf)
-    except Exception as e:
-        raise ItemParseError(f"Error parsing availability: {e}", Severity.ERROR)
+def __retrieve_raw_item_details(list_item: ListItem) -> Item:
+    item_id = list_item.item_id
+    log.info(f"Fetching record with ID: {item_id}")
+    api_url = f'{BASE_URL}/api/record?id={item_id}'
+    response = requests.get(
+        api_url,
+        headers={'Solus-App-Id': SOLUS_APP_ID}
+    )
 
+    status_code = response.status_code
+    log.debug(f"Records API response status code: {status_code}")
+    response_json = response.json()
+    log.debug(f"Records API response JSON: {json.dumps(response_json, indent=2)}")
 
-def get_availabilities(soup: BeautifulSoup):
-    availabilities_html = soup.select(".medium-availability-item")
+    if status_code != 200:
+        log.error(f"Failed to fetch record {item_id}: {status_code}")
+        raise ItemParseError(f"Failed to fetch record {item_id}: {status_code}", Severity.ERROR)
 
-    if not soup:
-        raise ItemParseError("No availabilities", Severity.ERROR)
-
-    availabilities_text = soup.select_one(".medium-availability-title + .text_container > p")
-    if availabilities_text:
-        stripped_text = availabilities_text.text.strip()
-        severity = Severity.WARN if "Dieser Titel wird digital angeboten" in stripped_text else Severity.ERROR
-        raise ItemParseError(f"No availabilities: {stripped_text}", severity)
-
-    availability_message = soup.select_one(".availability-message")
-    if availability_message:
-        stripped_text = availability_message.text.strip()
-        severity = Severity.WARN if "Es sind zur Zeit keine Daten zur Verfügbarkeit abrufbar. Bitte wenden Sie sich an das Bibliothekspersonal" in stripped_text else Severity.ERROR
-        raise ItemParseError(f"No availabilities: {stripped_text}", severity)
-
-    return availabilities_html
-
-
-def get_title_tag(soup: BeautifulSoup) -> str:
-    title_tag = soup.select_one(".medium-detail-title")
-    if not title_tag:
-        h1 = soup.select_one(".mod_resultreader > h1")
-        if h1:
-            raise ItemParseError(f"Title not found in item detail page: {h1.text.strip()}", Severity.ERROR)
-        raise ItemParseError("Title not found in item detail page", Severity.ERROR)
-    return title_tag.text.strip()
-
-
-def retrieve_item_details(id: str) -> Item:
-    url = f"https://www.buecherhallen.de/suchergebnis-detail/medium/{id}.html"
-    try:
-        page = requests.get(url).text
-        soup = BeautifulSoup(page, "html.parser")
-        title = get_title_tag(soup)
-        availabilities_html = get_availabilities(soup)
-        availabilities = Availabilities(list(map(parse_availability, availabilities_html)))
-        return Item(url=url, title=title, availabilities=availabilities)
-    except Exception as e:
-        if isinstance(e, ItemParseError):
-            raise e
-        raise ItemParseError(f"Error retrieving item details for {id}: {e}", Severity.ERROR)
+    return response_json
