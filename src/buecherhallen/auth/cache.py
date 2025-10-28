@@ -19,7 +19,6 @@ def cache_cookies(cookies: RequestsCookieJar):
             "path": cookie.path,
             "expires": cookie.expires,
             "secure": cookie.secure,
-            "httponly": cookie.has_nonstandard_attr("HttpOnly"),
             "rest": cookie._rest,
         })
 
@@ -43,9 +42,7 @@ def load_cookies() -> RequestsCookieJar | None:
                 secure=cookie.get("secure", False),
                 rest=cookie.get("rest", {}),
             )
-            if cookie.get("httponly"):
-                cookies_jar._cookies[cookie["domain"]][cookie["path"]][cookie["name"]].set_nonstandard_attr("HttpOnly",
-                                                                                                            True)
+
         return cookies_jar
     except FileNotFoundError:
         log.info("No cookies jar found in cache")
@@ -55,4 +52,4 @@ def load_cookies() -> RequestsCookieJar | None:
 def log_cookies(cookies: RequestsCookieJar):
     for cookie in cookies:
         log.debug(
-            f"Cookie: {cookie.name}={cookie.value[:10]}...; Domain={cookie.domain}; Path={cookie.path}; Expires={cookie.expires}; Secure={cookie.secure}; HttpOnly={cookie.has_nonstandard_attr('HttpOnly')}; Rest={cookie._rest}")
+            f"Cookie: {cookie.name}={cookie.value[:10]}...; Domain={cookie.domain}; Path={cookie.path}; Expires={cookie.expires}; Secure={cookie.secure}; Rest={cookie._rest}")
