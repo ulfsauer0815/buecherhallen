@@ -10,7 +10,11 @@ from playwright.sync_api import (
 log = logging.getLogger(__name__)
 
 
-def solve_cloudflare(page: Page) -> None:
+class BotProtectionError(Exception):
+    pass
+
+
+def solve_cloudflare(page: Page) -> str:
     try:
         page.wait_for_load_state("networkidle", timeout=5000)
     except PlaywrightError:
@@ -46,7 +50,7 @@ def solve_cloudflare(page: Page) -> None:
             page.wait_for_load_state(state="load")
             page.wait_for_load_state(state="domcontentloaded")
             log.info("Cloudflare challenge solved?")
-            return
+            return extract_turnstile_token(page)
 
     # If bounding box is found, click the challenge box
     box_x = bounding_box["x"] + randint(26, 28)
@@ -73,12 +77,17 @@ def solve_cloudflare(page: Page) -> None:
     page.wait_for_load_state(state="load")
     page.wait_for_load_state(state="domcontentloaded")
 
-    # check turnstile value
+    turnstile_token = extract_turnstile_token(page)
+
+    log.debug(f"Turnstile value: {turnstile_token[:10]}...")
+    log.info("Cloudflare captcha is solved")
+    return turnstile_token
+
+
+def extract_turnstile_token(page: Page) -> str | None:
     value = page.locator('input[name="cf-turnstile-response"]').get_attribute('value')
 
     if not value:
         log.error("Failed to retrieve Cloudflare turnstile response value")
-        return
-
-    log.debug(f"Turnstile value: {value[:10]}...")
-    log.info("Cloudflare captcha is solved")
+        raise BotProtectionError("Failed to solve Cloudflare captcha: Cannot find turnstile response value")
+    return value

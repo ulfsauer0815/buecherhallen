@@ -2,6 +2,8 @@ import logging
 import re
 import time
 
+import playwright.sync_api
+import requests
 from auth.bot_protection import solve_cloudflare
 from auth.cache import cache_cookies, load_cookies
 from auth.credentials import Credentials
@@ -15,6 +17,9 @@ from requests.cookies import RequestsCookieJar
 log = logging.getLogger(__name__)
 
 EXPIRY_BUFFER_SECONDS = 5 * 60  # 5 minutes
+
+# global variable to hold the next-action header value :S
+__turnstile_login_action: str | None = None
 
 
 class LoginError(Exception):
@@ -54,35 +59,25 @@ def login(credentials: Credentials, use_cache: bool = False, headless: bool = Tr
 
     log.info("Starting login process")
 
+    turnstile_token = None
     try:
         with Camoufox(os=["windows", "macos", "linux"], humanize=True, headless=headless) as browser:
             page = browser.new_page()
             __disable_cookie_banner(page)
+            page.on("response", __find_nextjs_next_action)
 
             page.goto(LOGIN_URL)
             page.wait_for_load_state(state="domcontentloaded")
             page.wait_for_load_state('networkidle')
 
-            solve_cloudflare(page)
+            turnstile_token = solve_cloudflare(page)
 
-            __enter_credentials_and_login(page, credentials)
+        cookie_jar_after_login = __login_with_token(credentials, turnstile_token, __turnstile_login_action)
 
-            # wait for next page to load
-            page.wait_for_url(re.compile(r'.*/user/account'), wait_until="commit")
+        if use_cache:
+            cache_cookies(cookie_jar_after_login)
+        return cookie_jar_after_login
 
-            log.info("Login form submitted, checking cookies")
-
-            cookie_jar = extract_cookie_jar(page)
-
-            log.debug("Cookies after login (shortened):")
-            for cookie in cookie_jar:
-                # print cookie but shorten values
-                log.debug(f"{cookie.name}: {cookie.value[:10]}...")
-
-            __check_login_success(cookie_jar)
-            if use_cache:
-                cache_cookies(cookie_jar)
-            return cookie_jar
     except Exception as e:
         log.error(f"Login failed: {str(e)}")
         raise LoginError("Login process failed") from e
@@ -112,7 +107,7 @@ def __enter_credentials_and_login(page: Page, credentials: Credentials) -> None:
     page.click('#main-content button[type="submit"]')
 
 
-def extract_cookie_jar(page) -> RequestsCookieJar:
+def extract_cookie_jar(page: Page) -> RequestsCookieJar:
     cookies = page.context.cookies()
     cookie_jar = RequestsCookieJar()
     for cookie in cookies:
@@ -133,3 +128,59 @@ def __get_cookie(cookies: RequestsCookieJar, name: str):
         if cookie.name == name:
             return cookie
     return None
+
+
+def __find_nextjs_next_action(response: playwright.sync_api.Response):
+    global __turnstile_login_action
+    re_match = re.match(r'https://www2\.buecherhallen\.de/_next/static/chunks/app/layout-[a-z0-9]+\.js', response.url)
+
+    if not re_match:
+        return
+    log.debug(f"Layout JS file response found: {response.url}")
+
+    if not response.ok:
+        log.error(f"Failed to load JS file for next-action determination: {response.status}")
+        raise LoginError("Failed to load layout JS file for next-action determination")
+
+    log.debug("Layout JS file loaded successfully")
+    body = response.body()
+    log.debug(f"Layout JS response: {body}")
+    pattern = re.compile(rb'\("([a-f0-9]{42})",u\.callServer,void 0,u\.findSourceMapURL,"turnstileLogin"\)')
+    match = pattern.search(body)
+    if match:
+        token = match.group(1).decode('utf-8')
+        log.info(f"Found 'next-action' hash for the login: {token}")
+        __turnstile_login_action = token
+
+
+def __login_with_token(credentials: Credentials, turnstile_token: str, next_action: str) -> RequestsCookieJar:
+    log.info("Submitting login form with Turnstile token")
+
+    payload = [{
+        "userID": f"{credentials.username}",
+        "password": credentials.password,
+        "hvToken": turnstile_token,
+        "keepIn": True
+    }, False]
+
+    response = requests.post(
+        LOGIN_URL,
+        headers={
+            'next-action': next_action,
+        },
+        json=payload,
+    )
+
+    if response.status_code != 200:
+        log.error(f"Login request failed with status code: {response.status_code}")
+        raise LoginError(f"Login request failed with status code: {response.status_code}")
+
+    log.info("Login request successful, extracting cookies")
+    cookie_jar = response.cookies
+
+    log.debug("Cookies after login (shortened):")
+    for cookie in cookie_jar:
+        log.debug(f"{cookie.name}: {cookie.value[:10]}...")
+
+    __check_login_success(cookie_jar)
+    return cookie_jar
