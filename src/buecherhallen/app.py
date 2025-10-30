@@ -49,6 +49,7 @@ def run():
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
             items = list(filter(None, executor.map(safe_retrieve, list_items)))
+        items.sort(key=lambda x: x.signature)
 
         generate_website(items)
     except Exception as e:
