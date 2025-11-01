@@ -136,11 +136,12 @@ def __retrieve_raw_item_details(list_item: ListItem) -> Item:
 
     status_code = response.status_code
     log.debug(f"Records API response status code: {status_code}")
+    if not response.ok:
+        log.error(f"Failed to fetch record {item_id}: {status_code}")
+        log.debug(f"Records API response content: {response.text}")
+        raise ItemParseError(f"Failed to fetch record {item_id}: {status_code}", Severity.ERROR)
+
     response_json = response.json()
     log.debug(f"Records API response JSON: {json.dumps(response_json, indent=2)}")
-
-    if status_code != 200:
-        log.error(f"Failed to fetch record {item_id}: {status_code}")
-        raise ItemParseError(f"Failed to fetch record {item_id}: {status_code}", Severity.ERROR)
 
     return response_json

@@ -46,11 +46,12 @@ def __retrieve_lists(cookies: requests.cookies.RequestsCookieJar) -> Any:
 
     status_code = response.status_code
     log.debug(f"Lists API response status code: {status_code}")
+    if not response.ok:
+        log.error(f"Failed to fetch lists: {status_code}")
+        log.debug(f"Lists API response content: {response.text}")
+        raise WatchlistError(f"Failed to fetch lists: {status_code}")
+
     response_json = response.json()
     log.debug(f"Lists API response JSON: {json.dumps(response_json, indent=2)}")
-
-    if status_code != 200:
-        log.error(f"Failed to fetch lists: {status_code}")
-        raise WatchlistError(f"Failed to fetch lists: {status_code}")
 
     return response_json
