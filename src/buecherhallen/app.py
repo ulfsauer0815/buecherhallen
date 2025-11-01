@@ -39,7 +39,7 @@ def run():
 
         def safe_retrieve(list_item: ListItem) -> Item | None:
             try:
-                return retrieve_item_details(list_item)
+                return retrieve_item_details(list_item, options.retries)
             except ItemParseError as ipe:
                 print(f"Failed to retrieve item {list_item}: {ipe}", file=sys.stderr)
                 if ipe.is_error():

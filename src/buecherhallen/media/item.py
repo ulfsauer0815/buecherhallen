@@ -118,17 +118,17 @@ class ItemParseError(Exception):
         return self.severity == Severity.WARN
 
 
-def retrieve_item_details(list_item: ListItem) -> Item:
-    raw_item = __retrieve_raw_item_details(list_item)
+def retrieve_item_details(list_item: ListItem, retries: int = 0) -> Item:
+    raw_item = __retrieve_raw_item_details(list_item, retries)
     item = Item.from_json(raw_item)
     print(item)
     return item
 
 
-def __retrieve_raw_item_details(list_item: ListItem) -> Item:
+def __retrieve_raw_item_details(list_item: ListItem, retries: int) -> Item:
     item_id = list_item.item_id
     log.info(f"Fetching record with ID: {item_id}")
-    api_url = f'{BASE_URL}/api/record?id={item_id}'
+    api_url = f'{BASE_URL}/api/record?id={item_id}a'
     response = requests.get(
         api_url,
         headers={'Solus-App-Id': SOLUS_APP_ID}
@@ -139,6 +139,9 @@ def __retrieve_raw_item_details(list_item: ListItem) -> Item:
     if not response.ok:
         log.error(f"Failed to fetch record {item_id}: {status_code}")
         log.debug(f"Records API response content: {response.text}")
+        if retries > 0:
+            log.warning(f"Retrying fetch for record {item_id} ({retries} left)")
+            return __retrieve_raw_item_details(list_item, retries - 1)
         raise ItemParseError(f"Failed to fetch record {item_id}: {status_code}", Severity.ERROR)
 
     response_json = response.json()
