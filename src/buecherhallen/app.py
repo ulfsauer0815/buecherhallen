@@ -25,27 +25,23 @@ def run():
         try:
             cookies = login(credentials, options.cache_cookies, options.headless)
         except LoginError as e:
-            raise AppError(f"Login failed: {e}")
+            raise AppError(f"Login failed: {e}") from e
 
         try:
             list_items = retrieve_watchlist_items(cookies)
         except WatchlistError as e:
-            raise AppError(f"Failed to retrieve watchlist: {e}")
+            raise AppError(f"Failed to retrieve watchlist: {e}") from e
 
         for item in list_items:
             print(item)
 
         items: list[Item] = []
 
-        def safe_retrieve(list_item: ListItem) -> Item | None:
+        def safe_retrieve(list_item: ListItem) -> Item:
             try:
                 return retrieve_item_details(list_item, options.retries)
             except ItemParseError as ipe:
-                print(f"Failed to retrieve item {list_item}: {ipe}", file=sys.stderr)
-                if ipe.is_error():
-                    print("Exiting due to critical error in item retrieval", file=sys.stderr)
-                    raise AppError(f"Critical error in retrieval of item {list_item}: {ipe}")
-                return None
+                raise AppError(f"Failed to retrieve item {list_item}: {ipe}") from ipe
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
             items = list(filter(None, executor.map(safe_retrieve, list_items)))
@@ -53,6 +49,6 @@ def run():
 
         generate_website(items)
     except Exception as e:
-        print(f"Error: {e}\n", file=sys.stderr)
         print(traceback.format_exc(), end='', file=sys.stderr)
+        print(f"\nError: {e}\n", file=sys.stderr)
         exit(1)

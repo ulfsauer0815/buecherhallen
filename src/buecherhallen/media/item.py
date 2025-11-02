@@ -1,6 +1,5 @@
 import json
 import logging
-from enum import Enum
 from typing import Any
 
 import requests
@@ -97,25 +96,8 @@ class Item:
         return Item(item_id, title, author, signature, availabilities)
 
 
-class Severity(Enum):
-    WARN = "WARN"
-    ERROR = "ERROR"
-
-
 class ItemParseError(Exception):
-    def __init__(self, message: str, severity: Severity = Severity.ERROR):
-        super().__init__(message)
-        self.severity = severity
-        self.message = message
-
-    def __str__(self):
-        return f"[{self.severity.value}] {self.message}"
-
-    def is_error(self) -> bool:
-        return self.severity == Severity.ERROR
-
-    def is_warn(self) -> bool:
-        return self.severity == Severity.WARN
+    pass
 
 
 def retrieve_item_details(list_item: ListItem, retries: int = 0) -> Item:
@@ -128,7 +110,7 @@ def retrieve_item_details(list_item: ListItem, retries: int = 0) -> Item:
 def __retrieve_raw_item_details(list_item: ListItem, retries: int) -> Item:
     item_id = list_item.item_id
     log.info(f"Fetching record with ID: {item_id}")
-    api_url = f'{BASE_URL}/api/record?id={item_id}'
+    api_url = f'{BASE_URL}/api/record?id={item_id}a'
     response = requests.get(
         api_url,
         headers={'Solus-App-Id': SOLUS_APP_ID}
@@ -142,7 +124,7 @@ def __retrieve_raw_item_details(list_item: ListItem, retries: int) -> Item:
         if retries > 0:
             log.warning(f"Retrying fetch for record {item_id} ({retries} left)")
             return __retrieve_raw_item_details(list_item, retries - 1)
-        raise ItemParseError(f"Failed to fetch record {item_id}: {status_code}", Severity.ERROR)
+        raise ItemParseError(f"Failed to fetch record {item_id}: {status_code}")
 
     response_json = response.json()
     log.debug(f"Records API response JSON: {json.dumps(response_json, indent=2)}")
