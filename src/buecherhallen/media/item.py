@@ -110,7 +110,7 @@ def retrieve_item_details(list_item: ListItem, retries: int = 0) -> Item:
 def __retrieve_raw_item_details(list_item: ListItem, retries: int) -> Item:
     item_id = list_item.item_id
     log.info(f"Fetching record with ID: {item_id}")
-    api_url = f'{BASE_URL}/api/record?id={item_id}a'
+    api_url = f'{BASE_URL}/api/record?id={item_id}'
     response = requests.get(
         api_url,
         headers={'Solus-App-Id': SOLUS_APP_ID}
