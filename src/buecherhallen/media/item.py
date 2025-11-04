@@ -3,8 +3,9 @@ import logging
 from typing import Any
 
 import requests
-from common.constants import BASE_URL, SOLUS_APP_ID
-from media.list_item import ListItem
+
+from buecherhallen.common.constants import BASE_URL, SOLUS_APP_ID
+from buecherhallen.media.list_item import ListItem
 
 log = logging.getLogger(__name__)
 

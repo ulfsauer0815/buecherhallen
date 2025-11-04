@@ -9,6 +9,9 @@ dependencies = [
     "requests>=2.32.5",
 ]
 
+[project.scripts]
+buecherhallen = "buecherhallen.main:main"
+
 [build-system]
-requires = ["uv_build>=0.8.15,<0.9.0"]
+requires = ["uv_build>=0.9.6,<0.10.0"]
 build-backend = "uv_build"

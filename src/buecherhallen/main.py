@@ -2,8 +2,8 @@ import logging
 import os
 import sys
 
-import app
-from log.custom_formatter import CustomFormatter
+import buecherhallen.app as app
+from buecherhallen.log.custom_formatter import CustomFormatter
 
 log_level = os.environ.get('BH_LOG_LEVEL', 'WARN')
 numeric_log_level = getattr(logging, log_level.upper(), None)

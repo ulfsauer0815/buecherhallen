@@ -2,7 +2,6 @@ import logging
 import re
 from random import randint
 
-from auth.credentials import Credentials
 from playwright.sync_api import (
     Page, Error as PlaywrightError
 )

@@ -1,8 +1,9 @@
 import json
 import logging
 
-from common.constants import COOKIES_FILE
 from requests.cookies import RequestsCookieJar
+
+from buecherhallen.common.constants import COOKIES_FILE
 
 log = logging.getLogger(__name__)
 

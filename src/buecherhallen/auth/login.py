@@ -4,15 +4,16 @@ import time
 
 import playwright.sync_api
 import requests
-from auth.bot_protection import solve_cloudflare
-from auth.cache import cache_cookies, load_cookies
-from auth.credentials import Credentials
 from camoufox.sync_api import Camoufox
-from common.constants import LOGIN_URL, BASE_HOSTNAME
 from playwright.sync_api import (
     Page
 )
 from requests.cookies import RequestsCookieJar
+
+from buecherhallen.auth.bot_protection import solve_cloudflare
+from buecherhallen.auth.cache import cache_cookies, load_cookies
+from buecherhallen.auth.credentials import Credentials
+from buecherhallen.common.constants import LOGIN_URL, BASE_HOSTNAME
 
 log = logging.getLogger(__name__)
 

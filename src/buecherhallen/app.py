@@ -3,13 +3,13 @@ import logging
 import sys
 import traceback
 
-from auth.credentials import retrieve_credentials
-from auth.login import login, LoginError
-from common.options import retrieve_options
-from media.item import retrieve_item_details, Item, ItemParseError
-from media.list_item import ListItem
-from media.watchlist import retrieve_watchlist_items, WatchlistError
-from ui.site import generate_website
+from buecherhallen.auth.credentials import retrieve_credentials
+from buecherhallen.auth.login import login, LoginError
+from buecherhallen.common.options import retrieve_options
+from buecherhallen.media.item import retrieve_item_details, Item, ItemParseError
+from buecherhallen.media.list_item import ListItem
+from buecherhallen.media.watchlist import retrieve_watchlist_items, WatchlistError
+from buecherhallen.ui.site import generate_website
 
 logger = logging.getLogger(__name__)
 

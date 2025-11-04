@@ -1,6 +1,6 @@
 import logging
 
-from ui.index import render_index, create_env
+from buecherhallen.ui.index import render_index, create_env
 
 log = logging.getLogger(__name__)
 
