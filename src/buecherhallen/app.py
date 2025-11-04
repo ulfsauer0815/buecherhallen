@@ -50,5 +50,5 @@ def run():
         generate_website(items)
     except Exception as e:
         print(traceback.format_exc(), end='', file=sys.stderr)
-        print(f"\nError: {e}\n", file=sys.stderr)
+        print(f"\nError: {e}", file=sys.stderr)
         exit(1)
