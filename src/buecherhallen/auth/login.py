@@ -146,16 +146,21 @@ def __find_nextjs_next_action(response: playwright.sync_api.Response):
     log.debug("Layout JS file loaded successfully")
     body = response.body()
     log.debug(f"Layout JS response: {body}")
-    pattern = re.compile(rb'\("([a-f0-9]{42})",u\.callServer,void 0,u\.findSourceMapURL,"turnstileLogin"\)')
+    pattern = re.compile(rb'\("([a-f0-9]{42})",d.callServer,void 0,d.findSourceMapURL,"turnstileLogin"\)')
     match = pattern.search(body)
     if match:
         token = match.group(1).decode('utf-8')
         log.info(f"Found 'next-action' hash for the login: {token}")
         __turnstile_login_action = token
+    else:
+        log.error("Failed to find 'next-action' hash in layout JS file")
 
 
 def __login_with_token(credentials: Credentials, turnstile_token: str, next_action: str) -> RequestsCookieJar:
     log.info("Submitting login form with Turnstile token")
+    if not next_action:
+        log.error("'next-action' hash is missing, cannot proceed with login")
+        raise LoginError("'next-action' hash is missing, cannot proceed with login")
 
     payload = [{
         "userID": f"{credentials.username}",
