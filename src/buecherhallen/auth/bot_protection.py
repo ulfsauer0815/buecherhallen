@@ -83,7 +83,7 @@ def solve_cloudflare(page: Page) -> str:
     return turnstile_token
 
 
-def extract_turnstile_token(page: Page) -> str | None:
+def extract_turnstile_token(page: Page) -> str:
     value = page.locator('input[name="cf-turnstile-response"]').get_attribute('value')
 
     if not value:

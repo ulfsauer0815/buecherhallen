@@ -15,7 +15,7 @@ class WatchlistError(Exception):
     pass
 
 
-def retrieve_watchlist_items(cookies: requests.cookies.RequestsCookieJar) -> Any:
+def retrieve_watchlist_items(cookies: requests.cookies.RequestsCookieJar) -> list[ListItem]:
     try:
         raw_items = __retrieve_watchlist_raw_items(cookies)
         return [ListItem.from_json(raw_item) for raw_item in raw_items]
@@ -23,7 +23,7 @@ def retrieve_watchlist_items(cookies: requests.cookies.RequestsCookieJar) -> Any
         raise WatchlistError(f"Error retrieving watchlist items: {e}")
 
 
-def __retrieve_watchlist_raw_items(cookies: requests.cookies.RequestsCookieJar) -> Any:
+def __retrieve_watchlist_raw_items(cookies: requests.cookies.RequestsCookieJar) -> list[dict[str, Any]]:
     lists = __retrieve_lists(cookies)
 
     for item_list in lists:
@@ -34,7 +34,7 @@ def __retrieve_watchlist_raw_items(cookies: requests.cookies.RequestsCookieJar) 
     raise WatchlistError(f"Cannot find list with name 'Merkliste'")
 
 
-def __retrieve_lists(cookies: requests.cookies.RequestsCookieJar) -> Any:
+def __retrieve_lists(cookies: requests.cookies.RequestsCookieJar) -> list[dict[str, Any]]:
     log.info("Fetching lists")
 
     api_url = f'{BASE_URL}/api/items?type=lists'

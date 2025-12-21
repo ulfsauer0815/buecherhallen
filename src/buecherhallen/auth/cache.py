@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import Optional
 
 from requests.cookies import RequestsCookieJar
 
@@ -27,7 +28,7 @@ def cache_cookies(cookies: RequestsCookieJar):
         json.dump(cookies_list, f, indent=2)
 
 
-def load_cookies() -> RequestsCookieJar | None:
+def load_cookies() -> Optional[RequestsCookieJar]:
     log.info("Searching cookies jar in cache")
     try:
         with open(COOKIES_FILE, "r", encoding="utf-8") as f:
@@ -53,4 +54,4 @@ def load_cookies() -> RequestsCookieJar | None:
 def log_cookies(cookies: RequestsCookieJar):
     for cookie in cookies:
         log.debug(
-            f"Cookie: {cookie.name}={cookie.value[:10]}...; Domain={cookie.domain}; Path={cookie.path}; Expires={cookie.expires}; Secure={cookie.secure}; Rest={cookie._rest}")
+            f"Cookie: {cookie.name}={(cookie.value[:10] + '...') if cookie.value else 'None'}; Domain={cookie.domain}; Path={cookie.path}; Expires={cookie.expires}; Secure={cookie.secure}; Rest={cookie._rest}")

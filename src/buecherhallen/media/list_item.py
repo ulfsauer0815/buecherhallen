@@ -1,8 +1,8 @@
-from typing import Any
+from typing import Any, Optional
 
 
 class ListItem:
-    def __init__(self, item_id, title, author):
+    def __init__(self, item_id: str, title: str, author: Optional[str]):
         self.item_id = item_id
         self.title = title
         self.author = author
@@ -11,8 +11,9 @@ class ListItem:
         return f"ListItem({self.item_id}, {self.title}, {self.author})"
 
     @staticmethod
-    def from_json(raw: Any) -> 'ListItem':
+    def from_json(raw: dict[str, Any]) -> 'ListItem':
         item_id = raw.get("id")
+        assert item_id is not None
         title = None
         author = None
 
@@ -24,5 +25,7 @@ class ListItem:
                 title = value
             elif key == "author":
                 author = value
+
+        assert title is not None
 
         return ListItem(item_id, title, author)

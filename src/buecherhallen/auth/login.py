@@ -1,6 +1,7 @@
 import logging
 import re
 import time
+from typing import Optional
 
 import playwright.sync_api
 import requests
@@ -20,7 +21,7 @@ log = logging.getLogger(__name__)
 EXPIRY_BUFFER_SECONDS = 5 * 60  # 5 minutes
 
 # global variable to hold the next-action header value :S
-__turnstile_login_action: str | None = None
+__turnstile_login_action: Optional[str] = None
 
 
 class LoginError(Exception):
@@ -156,7 +157,7 @@ def __find_nextjs_next_action(response: playwright.sync_api.Response):
         log.error("Failed to find 'next-action' hash in layout JS file")
 
 
-def __login_with_token(credentials: Credentials, turnstile_token: str, next_action: str) -> RequestsCookieJar:
+def __login_with_token(credentials: Credentials, turnstile_token: str, next_action: Optional[str]) -> RequestsCookieJar:
     log.info("Submitting login form with Turnstile token")
     if not next_action:
         log.error("'next-action' hash is missing, cannot proceed with login")

@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any
+from typing import Any, Optional
 
 import requests
 
@@ -54,7 +54,8 @@ class Item:
         "konsolenspiel",
     ]
 
-    def __init__(self, item_id, title, author, format, genre, signature, availabilities):
+    def __init__(self, item_id: str, title: str, author: Optional[str], format: Optional[str], genre: Optional[str],
+                 signature: str, availabilities: Availabilities):
         self.item_id = item_id
         self.title = title
         self.author = author
@@ -92,7 +93,7 @@ class Item:
 
         return False
 
-    def get_icon(self) -> str | None:
+    def get_icon(self) -> Optional[str]:
         if self.is_video_game():
             return "🕹"
         return None
@@ -101,9 +102,11 @@ class Item:
         return f"Item({self.item_id}, {self.title}, {self.author}, {self.format}, {self.genre}, {self.signature}, {self.availabilities})"
 
     @staticmethod
-    def from_json(raw: Any) -> 'Item':
+    def from_json(raw: dict[str, Any]) -> 'Item':
         item_id = raw.get("recordID")
+        assert item_id is not None
         title = raw.get("title")
+        assert title is not None
         author = raw.get("author")
         format = raw.get("format")
 

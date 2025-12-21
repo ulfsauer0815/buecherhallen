@@ -11,11 +11,9 @@ class CustomFormatter(logging.Formatter):
     reset = "\x1b[0m"
 
     @staticmethod
-    def __colors_enabled():
+    def __colors_enabled() -> bool:
         no_color_env = os.environ.get('NO_COLOR')
-        if no_color_env is not None and no_color_env.lower() in ('', '1', 'true', 'yes'):
-            return False
-        return True
+        return not (no_color_env is not None and no_color_env.lower() in ('', '1', 'true', 'yes'))
 
     colored_output = __colors_enabled()
 
@@ -27,7 +25,7 @@ class CustomFormatter(logging.Formatter):
         logging.CRITICAL: bold_red,
     }
 
-    def __get_format(self, level):
+    def __get_format(self, level: int):
         if self.colored_output:
             return f"[%(asctime)s] [{self.COLORS.get(level)}%(levelname)s{self.reset}] %(message)s"
         else:
