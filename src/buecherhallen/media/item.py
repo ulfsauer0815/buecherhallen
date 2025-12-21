@@ -54,9 +54,10 @@ class Item:
         "konsolenspiel",
     ]
 
-    def __init__(self, item_id: str, title: str, author: Optional[str], format: Optional[str], genre: Optional[str],
-                 signature: str, availabilities: Availabilities):
+    def __init__(self, item_id: str, source: str, title: str, author: Optional[str], format: Optional[str],
+                 genre: Optional[str], signature: str, availabilities: Availabilities):
         self.item_id = item_id
+        self.source = source
         self.title = title
         self.author = author
         self.format = format
@@ -73,7 +74,7 @@ class Item:
         return self.signature
 
     def get_url(self) -> str:
-        return f"{BASE_URL}/manifestations/{self.item_id}"
+        return f"{BASE_URL}/manifestations/{self.item_id}?source={self.source}"
 
     def is_video_game(self) -> bool:
         # check 'format'
@@ -105,6 +106,8 @@ class Item:
     def from_json(raw: dict[str, Any]) -> 'Item':
         item_id = raw.get("recordID")
         assert item_id is not None
+        source = raw.get("source")
+        assert source is not None
         title = raw.get("title")
         assert title is not None
         author = raw.get("author")
@@ -122,6 +125,7 @@ class Item:
         copies = raw.get("copies", [])
         availabilities_list = []
         location_counts = {}
+
         for copy in copies:
             location_name = copy.get("location", {}).get("locationName", "Unknown Location")
             available = copy.get("available", False)
@@ -132,12 +136,23 @@ class Item:
             if available:
                 location_counts[location_name]["count"] += 1
 
+        digital_copies = raw.get("digitalCopies", [])
+        for copy in digital_copies:
+            location_name = "Digital"
+            available = copy.get("available", False)
+            count = copy.get("count", 1)
+            if location_name not in location_counts:
+                location_counts[location_name] = {"count": 0, "max_count": 0, "shelf": copy.get("shelf", "")}
+            location_counts[location_name]["max_count"] += count
+            if available:
+                location_counts[location_name]["count"] += count
+
         for location, counts in location_counts.items():
             availabilities_list.append(Availability(location, counts["count"], counts["max_count"], counts["shelf"]))
 
         availabilities = Availabilities(availabilities_list)
 
-        return Item(item_id, title, author, format, genre, signature, availabilities)
+        return Item(item_id, source, title, author, format, genre, signature, availabilities)
 
 
 class ItemParseError(Exception):
@@ -154,7 +169,7 @@ def retrieve_item_details(list_item: ListItem, retries: int = 0) -> Item:
 def __retrieve_raw_item_details(list_item: ListItem, retries: int) -> dict[str, Any]:
     item_id = list_item.item_id
     log.info(f"Fetching record with ID: {item_id}")
-    api_url = f'{BASE_URL}/api/record?id={item_id}'
+    api_url = f'{BASE_URL}/api/record?id={item_id}&source={list_item.source}'
     response = requests.get(
         api_url,
         headers={'Solus-App-Id': SOLUS_APP_ID}
@@ -168,7 +183,7 @@ def __retrieve_raw_item_details(list_item: ListItem, retries: int) -> dict[str, 
         if retries > 0:
             log.warning(f"Retrying fetch for record {item_id} ({retries} left)")
             return __retrieve_raw_item_details(list_item, retries - 1)
-        raise ItemParseError(f"Failed to fetch record {item_id}: {status_code}")
+        raise ItemParseError(f"Failed to fetch record {item_id}: status code {status_code}")
 
     response_json = response.json()
     log.debug(f"Records API response JSON: {json.dumps(response_json, indent=2)}")
