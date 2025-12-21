@@ -106,7 +106,7 @@ class Item:
     def from_json(raw: dict[str, Any]) -> 'Item':
         item_id = raw.get("recordID")
         assert item_id is not None
-        source = raw.get("source")
+        source = raw.get("source", "ILS")
         assert source is not None
         title = raw.get("title")
         assert title is not None
