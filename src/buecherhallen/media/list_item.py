@@ -20,8 +20,7 @@ class ListItem:
     def from_json(raw: dict[str, Any]) -> 'ListItem':
         item_id = raw.get("id")
         assert item_id is not None
-        source = raw.get("source")
-        assert source is not None
+        source = raw.get("source", "ILS")
         title = None
         author = None
 
