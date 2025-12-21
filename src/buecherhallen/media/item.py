@@ -43,10 +43,23 @@ class Availabilities:
 
 
 class Item:
-    def __init__(self, item_id, title, author, signature, availabilities):
+    video_game_format_indicators = [
+        "konsolenspiel",
+        "nintendo switch",
+        "playstation",
+        "xbox",
+    ]
+
+    video_game_genre_indicators = [
+        "konsolenspiel",
+    ]
+
+    def __init__(self, item_id, title, author, format, genre, signature, availabilities):
         self.item_id = item_id
         self.title = title
         self.author = author
+        self.format = format
+        self.genre = genre
         self.signature = signature
         self.availabilities = availabilities
 
@@ -61,20 +74,47 @@ class Item:
     def get_url(self) -> str:
         return f"{BASE_URL}/manifestations/{self.item_id}"
 
+    def is_video_game(self) -> bool:
+        # check 'format'
+        if self.format is not None:
+            format_normalized = self.format.strip().lower()
+
+            for indicator in Item.video_game_format_indicators:
+                if indicator in format_normalized:
+                    return True
+
+        # check 'Genre'
+        if self.genre is not None:
+            genre_normalized = self.genre.strip().lower()
+
+            if genre_normalized in Item.video_game_genre_indicators:
+                return True
+
+        return False
+
+    def get_icon(self) -> str | None:
+        if self.is_video_game():
+            return "🕹"
+        return None
+
     def __repr__(self):
-        return f"Item({self.item_id}, {self.title}, {self.author}, {self.signature}, {self.availabilities})"
+        return f"Item({self.item_id}, {self.title}, {self.author}, {self.format}, {self.genre}, {self.signature}, {self.availabilities})"
 
     @staticmethod
     def from_json(raw: Any) -> 'Item':
         item_id = raw.get("recordID")
         title = raw.get("title")
         author = raw.get("author")
+        format = raw.get("format")
 
         signature = ""
+        genre = None
         for metadata in raw.get("mainMetadata", []):
-            if metadata.get("key") == "Signatur":
+            key = metadata.get("key")
+            if key == "Signatur":
                 signature = metadata.get("usableValue", "")
-                break
+            if key == "Genre":
+                genre = metadata.get("usableValue", None)
 
         copies = raw.get("copies", [])
         availabilities_list = []
@@ -94,7 +134,7 @@ class Item:
 
         availabilities = Availabilities(availabilities_list)
 
-        return Item(item_id, title, author, signature, availabilities)
+        return Item(item_id, title, author, format, genre, signature, availabilities)
 
 
 class ItemParseError(Exception):
@@ -108,7 +148,7 @@ def retrieve_item_details(list_item: ListItem, retries: int = 0) -> Item:
     return item
 
 
-def __retrieve_raw_item_details(list_item: ListItem, retries: int) -> Item:
+def __retrieve_raw_item_details(list_item: ListItem, retries: int) -> dict[str, Any]:
     item_id = list_item.item_id
     log.info(f"Fetching record with ID: {item_id}")
     api_url = f'{BASE_URL}/api/record?id={item_id}'

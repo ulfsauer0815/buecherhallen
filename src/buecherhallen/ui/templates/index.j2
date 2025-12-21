@@ -10,6 +10,13 @@
     <link rel="apple-touch-icon" sizes="512x512" href="favicon-512x512.png">
     <link rel="apple-touch-icon" sizes="256x256" href="favicon-256x256.png">
     <link rel="apple-touch-icon" sizes="128x128" href="favicon-128x128.png">
+    <style>
+        .item-icon {
+            font-size: 0.6em;
+            line-height: 1em;
+            vertical-align: middle;
+        }
+    </style>
 </head>
 
 <body>
@@ -21,11 +28,18 @@
         <h2 id="{{ location | lower }}">{{ location }}</h2>
         <table>
             {% for item in items %}
-            <tr>
-                <td><a href="{{ item.get_url() }}">{{ item.title }}</a></td>
-                <td>({{ item.availabilities[location].count }}/{{ item.availabilities[location].max_count }}) </td>
-                <td>{{ item.availabilities[location].shelf if item.availabilities[location].shelf else item.get_clean_signature() }}</td>
-            </tr>
+                <tr>
+                    <td>
+                        <div>
+                            <a href="{{ item.get_url() }}">{{ item.title }}</a>
+                            {% if item.get_icon() is not none %}
+                                <span class="item-icon">{{ item.get_icon() }}</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>({{ item.availabilities[location].count }}/{{ item.availabilities[location].max_count }})</td>
+                    <td>{{ item.availabilities[location].shelf if item.availabilities[location].shelf else item.get_clean_signature() }}</td>
+                </tr>
             {% endfor %}
         </table>
     {% endfor %}
