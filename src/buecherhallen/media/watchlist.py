@@ -15,19 +15,19 @@ class WatchlistError(Exception):
     pass
 
 
-def retrieve_watchlist_items(cookies: requests.cookies.RequestsCookieJar) -> list[ListItem]:
+def retrieve_watchlist_items(list_name: str, cookies: requests.cookies.RequestsCookieJar) -> list[ListItem]:
     try:
-        raw_items = __retrieve_watchlist_raw_items(cookies)
+        raw_items = __retrieve_watchlist_raw_items(list_name, cookies)
         return [ListItem.from_json(raw_item) for raw_item in raw_items]
     except Exception as e:
         raise WatchlistError(f"Error retrieving watchlist items: {e}")
 
 
-def __retrieve_watchlist_raw_items(cookies: requests.cookies.RequestsCookieJar) -> list[dict[str, Any]]:
+def __retrieve_watchlist_raw_items(list_name: str, cookies: requests.cookies.RequestsCookieJar) -> list[dict[str, Any]]:
     lists = __retrieve_lists(cookies)
 
     for item_list in lists:
-        if item_list.get("listName") == "Merkliste":
+        if item_list.get("listName") == list_name:
             watch_list_items = item_list.get("items", [])
             return watch_list_items
 

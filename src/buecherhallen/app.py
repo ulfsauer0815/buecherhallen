@@ -28,7 +28,7 @@ def run():
             raise AppError(f"Login failed: {e}") from e
 
         try:
-            list_items = retrieve_watchlist_items(cookies)
+            list_items = retrieve_watchlist_items(options.list_name, cookies)
         except WatchlistError as e:
             raise AppError(f"Failed to retrieve watchlist: {e}") from e
 
