@@ -28,7 +28,10 @@ def solve_cloudflare(page: Page) -> str:
         log.info("Wait for iframe")
         iframe.wait_for_load_state(state="domcontentloaded")
         iframe.wait_for_load_state("networkidle")
-        bounding_box = iframe.frame_element().bounding_box()
+        element = iframe.frame_element()
+        element.scroll_into_view_if_needed()
+        bounding_box = element.bounding_box()
+
         log.debug(f"iframe bounding box: {bounding_box}")
 
     # Fallback: try to find the challenge box directly on the page
