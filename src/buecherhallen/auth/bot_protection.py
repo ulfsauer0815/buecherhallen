@@ -26,7 +26,7 @@ def solve_cloudflare(page: Page) -> str:
 
     if iframe is not None:
         log.info("Wait for iframe")
-        iframe.wait_for_load_state(state="domcontentloaded")
+        iframe.wait_for_load_state("domcontentloaded")
         iframe.wait_for_load_state("networkidle")
         element = iframe.frame_element()
         element.scroll_into_view_if_needed()
@@ -49,8 +49,8 @@ def solve_cloudflare(page: Page) -> str:
                 page.wait_for_load_state("networkidle", timeout=10000)
             except PlaywrightError:
                 pass
-            page.wait_for_load_state(state="load")
-            page.wait_for_load_state(state="domcontentloaded")
+            page.wait_for_load_state("load")
+            page.wait_for_load_state("domcontentloaded")
             log.info("Cloudflare challenge solved?")
             return extract_turnstile_token(page)
 
@@ -76,8 +76,8 @@ def solve_cloudflare(page: Page) -> str:
         log.info("Network idle timeout, maybe challenge is solved?")
 
     log.info("Wait for page load")
-    page.wait_for_load_state(state="load")
-    page.wait_for_load_state(state="domcontentloaded")
+    page.wait_for_load_state("load")
+    page.wait_for_load_state("domcontentloaded")
 
     turnstile_token = extract_turnstile_token(page)
 

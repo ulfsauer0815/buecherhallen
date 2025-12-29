@@ -69,7 +69,7 @@ def login(credentials: Credentials, use_cache: bool = False, headless: bool = Tr
             page.on("response", __find_nextjs_next_action)
 
             page.goto(LOGIN_URL)
-            page.wait_for_load_state(state="domcontentloaded")
+            page.wait_for_load_state("domcontentloaded")
             page.wait_for_load_state('networkidle')
 
             turnstile_token = solve_cloudflare(page)
