@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 import time
 from typing import Optional
@@ -47,7 +48,7 @@ def __check_login_success(cookies: RequestsCookieJar):
         raise LoginError("luci_session cookie is expired, login has failed")
 
 
-def login(credentials: Credentials, use_cache: bool = False, headless: bool = True) -> RequestsCookieJar:
+def login(credentials: Credentials, use_cache: bool = False, headless: bool = True, video_dir: Optional[str] = None) -> RequestsCookieJar:
     if use_cache:
         log.warning("Cache usage is experimental and might not work as expected!")
         log.info("Checking for cached cookies")
@@ -63,18 +64,28 @@ def login(credentials: Credentials, use_cache: bool = False, headless: bool = Tr
 
     turnstile_token = None
     try:
+        video_path = None
         with Camoufox(os=["windows", "macos", "linux"], humanize=True, headless=headless) as browser:
-            page = browser.new_page()
+            page = browser.new_page(**({"record_video_dir": video_dir} if video_dir else {}))
             __disable_cookie_banner(page)
             page.on("response", __find_nextjs_next_action)
 
             page.goto(LOGIN_URL)
             page.wait_for_load_state("domcontentloaded")
-            page.wait_for_load_state('networkidle')
+            page.wait_for_load_state("networkidle")
 
             turnstile_token = solve_cloudflare(page)
+            if video_dir and page.video:
+                video_path = page.video.path()
 
         cookie_jar_after_login = __login_with_token(credentials, turnstile_token, __turnstile_login_action)
+
+        if video_path:
+            try:
+                os.remove(video_path)
+                log.info(f"Deleted video file {video_path}")
+            except OSError as e:
+                log.warning(f"Failed to delete video file {video_path}: {e}")
 
         if use_cache:
             cache_cookies(cookie_jar_after_login)

@@ -23,7 +23,7 @@ def run():
         credentials = retrieve_credentials()
         options = retrieve_options()
         try:
-            cookies = login(credentials, options.cache_cookies, options.headless)
+            cookies = login(credentials, options.cache_cookies, options.headless, options.video_dir)
         except LoginError as e:
             raise AppError(f"Login failed: {e}") from e
 

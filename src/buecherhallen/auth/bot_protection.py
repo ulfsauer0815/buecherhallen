@@ -36,7 +36,7 @@ def solve_cloudflare(page: Page) -> str:
 
     # Fallback: try to find the challenge box directly on the page
     if not bounding_box:
-        log.info(f"Fallback, try to find directly on page")
+        log.info("Fallback, try to find directly on page")
         try:
             bounding_box = page.locator(
                 "#cf_turnstile div, #cf-turnstile div, .turnstile > div > div").last.bounding_box(timeout=5000)
