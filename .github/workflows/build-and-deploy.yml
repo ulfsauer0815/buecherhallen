@@ -43,8 +43,17 @@ jobs:
           BH_USERNAME: ${{ secrets.BH_USERNAME }}
           BH_PASSWORD: ${{ secrets.BH_PASSWORD }}
           BH_LOG_LEVEL: INFO
+          BH_VIDEO_DIR: ${{ runner.temp }}/bh-videos
         timeout-minutes: 5
         run: uv run src/buecherhallen/main.py
+
+      - name: "Upload video on failure"
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bh-videos
+          path: ${{ runner.temp }}/bh-videos
+          if-no-files-found: ignore
 
       - name: "Copy assets"
         run: make all
