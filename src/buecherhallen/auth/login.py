@@ -20,6 +20,7 @@ from buecherhallen.common.constants import LOGIN_URL, BASE_HOSTNAME
 log = logging.getLogger(__name__)
 
 EXPIRY_BUFFER_SECONDS = 5 * 60  # 5 minutes
+TOKEN_PATTERN = re.compile(rb'\("([a-f0-9]{42})",[a-zA-Z_$][a-zA-Z0-9_$]*\.callServer,void 0,[a-zA-Z_$][a-zA-Z0-9_$]*\.findSourceMapURL,"turnstileLogin"\)')
 
 # global variable to hold the next-action header value :S
 __turnstile_login_action: Optional[str] = None
@@ -145,27 +146,32 @@ def __get_cookie(cookies: RequestsCookieJar, name: str):
 
 def __find_nextjs_next_action(response: playwright.sync_api.Response):
     global __turnstile_login_action
-    re_match = re.match(r'https://www2\.buecherhallen\.de/_next/static/chunks/app/layout-[a-z0-9]+\.js', response.url)
+    filename = os.path.basename(response.url)
+
+    if __turnstile_login_action:
+        log.debug("Already found 'next-action' hash, skipping response")
+        return
+
+    re_match = re.match(r'https://www2\.buecherhallen\.de/_next/static/chunks/[a-z0-9-]+\.js', response.url)
 
     if not re_match:
         return
-    log.debug(f"Layout JS file response found: {response.url}")
+    log.debug(f"Matching JS file response found: {filename}")
 
     if not response.ok:
-        log.error(f"Failed to load JS file for next-action determination: {response.status}")
-        raise LoginError("Failed to load layout JS file for next-action determination")
+        log.warning(f"Failed to load matching JS file for next-action determination {filename}: {response.status}")
+        return
 
-    log.debug("Layout JS file loaded successfully")
+    log.debug(f"Matching JS file loaded successfully: {filename}")
+
     body = response.body()
-    log.debug(f"Layout JS response: {body}")
-    pattern = re.compile(rb'\("([a-f0-9]{42})",d.callServer,void 0,d.findSourceMapURL,"turnstileLogin"\)')
-    match = pattern.search(body)
+    match = TOKEN_PATTERN.search(body)
     if match:
         token = match.group(1).decode('utf-8')
         log.info(f"Found 'next-action' hash for the login: {token}")
         __turnstile_login_action = token
     else:
-        log.error("Failed to find 'next-action' hash in layout JS file")
+        log.debug(f"Failed to find 'next-action' hash in one of the matching JS files: {filename}")
 
 
 def __login_with_token(credentials: Credentials, turnstile_token: str, next_action: Optional[str]) -> RequestsCookieJar:
