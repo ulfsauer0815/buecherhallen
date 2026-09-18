@@ -38,6 +38,9 @@ jobs:
       - name: "Install dependencies"
         run: uv sync --locked
 
+      - name: "Install Camoufox"
+        run: uv run python -m camoufox fetch
+
       - name: "Run app"
         env:
           BH_USERNAME: ${{ secrets.BH_USERNAME }}
